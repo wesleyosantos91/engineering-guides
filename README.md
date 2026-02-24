@@ -40,6 +40,12 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   │   └── storage-best-practices.md
 │   └── governance/
 │       └── multi-account-strategy.md
+├── ddd/                        # Domain-Driven Design
+│   ├── 01-strategic-design.md
+│   ├── 02-tactical-design.md
+│   ├── 03-context-mapping.md
+│   ├── 04-anti-patterns.md
+│   └── 05-architecture-integration.md
 ├── design-patterns/            # Design Patterns (agnóstico a linguagem)
 │   ├── README.md
 │   ├── architectural-patterns.md
@@ -51,7 +57,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 ├── golang/                     # Go
 │   └── gin/
 │       └── project-structure.md
-├── java/                       # Java
+├── java/                       # Java / JVM
 │   ├── micronaut/
 │   │   └── project-structure.md
 │   ├── quarkus/
@@ -88,8 +94,33 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │       ├── sidecar.md
 │       ├── strangler-fig.md
 │       └── timeout.md
+├── k8s/                        # Kubernetes
+│   ├── README.md
+│   ├── best-practices/
+│   │   ├── 01-workloads-pod-design.md
+│   │   ├── 02-security.md
+│   │   ├── 03-networking.md
+│   │   ├── 04-resource-management.md
+│   │   ├── 05-observability.md
+│   │   ├── 06-cicd-gitops.md
+│   │   ├── 07-storage.md
+│   │   ├── 08-high-availability.md
+│   │   ├── 09-configuration.md
+│   │   └── 10-cluster-operations.md
+│   └── certifications/
+│       ├── KCNA.md
+│       ├── KCSA.md
+│       ├── CKAD.md
+│       ├── CKA.md
+│       ├── CKS.md
+│       └── KUBESTRONAUT.md
 ├── quality-engineering/        # Qualidade & Testes
-│   └── testing-strategy.md
+│   ├── testing-strategy.md
+│   ├── test-automation-patterns.md
+│   ├── code-review-quality.md
+│   ├── security-testing.md
+│   ├── performance-testing.md
+│   └── observability-quality.md
 ├── solid/                      # Princípios SOLID
 │   └── solid-principles.md
 ├── system-design/              # System Design
@@ -154,12 +185,14 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 |-------|-----------|
 | **API** | Boas práticas para design de APIs REST, GraphQL e gRPC |
 | **AWS** | Well-Architected, Serverless, Security, Networking, Containers, Databases, Observability, Cost Optimization, CI/CD, Disaster Recovery, Storage, Multi-Account |
+| **DDD** | Domain-Driven Design — Strategic Design, Tactical Design (Building Blocks), Context Mapping, Anti-Patterns e Integração com Arquiteturas |
 | **Design Patterns** | Padrões criacionais, estruturais, comportamentais e arquiteturais |
 | **Java** | Estrutura de projetos para Spring Boot, Quarkus e Micronaut |
 | **Go** | Estrutura de projetos com Gin |
+| **K8s** | Kubernetes — 10 guias de boas práticas (Workloads, Security, Networking, Resources, Observability, CI/CD GitOps, Storage, HA, Config, Cluster Ops) + 6 guias de certificações (KCNA, KCSA, CKAD, CKA, CKS, Kubestronaut) |
 | **Microservice Patterns** | 27 padrões essenciais para arquitetura de microsserviços |
-| **Quality Engineering** | Estratégias de testes e qualidade |
-| **SOLID** | Princípios SOLID aplicados |
+| **Quality Engineering** | Estratégia de testes, padrões de automação, code review, security testing, performance testing e observability |
+| **SOLID** | Princípios SOLID — SRP, OCP, LSP, ISP, DIP com heurísticas, anti-patterns e diretrizes para code review assistido por AI |
 | **System Design** | 43 tópicos de design de sistemas — conceitos fundamentais e case studies |
 | **Terraform** | IaC com Terraform para AWS — estrutura, módulos, segurança e testes |
 
@@ -175,3 +208,7 @@ Cada guia de tecnologia (`project-structure.md`) já contém instruções para o
 | Go (Gin) | `.docs/golang/gin/project-structure.md` |
 | Terraform (AWS) | `.docs/terraform/aws/` |
 | AWS (Best Practices) | `.docs/aws/` |
+| DDD | `.docs/ddd/` |
+| K8s | `.docs/k8s/` |
+| Quality Engineering | `.docs/quality-engineering/` |
+| SOLID | `.docs/solid/` |
