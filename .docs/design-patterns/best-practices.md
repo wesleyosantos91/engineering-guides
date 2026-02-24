@@ -2,7 +2,26 @@
 
 > **Agnóstico a linguagem** — Princípios, heurísticas e diretrizes que guiam decisões
 > de design independentemente da linguagem ou framework escolhidos.
-> Complementam os princípios SOLID e são a base para um código sustentável.
+> Complementam os [princípios SOLID](solid-principles.md) e são a base para um código sustentável.
+
+---
+
+## Priorização de Práticas
+
+Quando muitas práticas competem por atenção, priorize nesta ordem:
+
+| Prioridade | Prática | Justificativa |
+|------------|---------|---------------|
+| 1ª | **Fail Fast** | Erros detectados cedo custam menos |
+| 2ª | **KISS** | Simplicidade é pré-requisito para tudo mais |
+| 3ª | **Encapsulamento** | Protege invariantes e reduz superfície de erro |
+| 4ª | **Separation of Concerns** | Fundamento para manutenibilidade |
+| 5ª | **Composição sobre Herança** | Flexibilidade desde o início |
+| 6ª | **DRY** | Reduza duplicação após a 3ª ocorrência |
+| 7ª | **YAGNI** | Evite trabalho especulativo |
+| 8ª | **Program to Interface** | Desacoplamento para testabilidade |
+| 9ª | **Imutabilidade** | Thread safety e previsibilidade |
+| 10ª | **Defensive Programming** | Última linha de defesa |
 
 ---
 
@@ -53,8 +72,8 @@
 ### Regra prática
 
 > Se pensou em herança, pergunte: "Estou estendendo **comportamento** ou **tipo**?"
-> - Estendendo comportamento → **Composição** (Strategy, Decorator).
-> - Estendendo tipo verdadeiro → **Herança** (com cuidado, respeitando LSP).
+> - Estendendo comportamento → **Composição** ([Strategy](behavioral-patterns.md#strategy), [Decorator](structural-patterns.md#decorator)).
+> - Estendendo tipo verdadeiro → **Herança** (com cuidado, respeitando [LSP](solid-principles.md#l--liskov-substitution-principle-lsp)).
 
 ---
 
@@ -82,6 +101,15 @@ DRY não é apenas sobre código duplicado. É sobre **conhecimento duplicado**:
 - **Regra dos 3:** tolere duplicação até a terceira ocorrência antes de abstrair.
 - **Acoplamento indesejado:** unificar pode criar dependência entre módulos não relacionados.
 - **Microserviços:** alguma duplicação entre serviços é aceitável para manter autonomia.
+
+### Padrões que ajudam a eliminar duplicação
+
+| Tipo de duplicação | Padrão recomendado |
+|-------------------|--------------------|
+| Lógica de criação de objetos | [Factory Method](creational-patterns.md#factory-method), [Builder](creational-patterns.md#builder) |
+| Algoritmos com estrutura comum | [Template Method](behavioral-patterns.md#template-method), [Strategy](behavioral-patterns.md#strategy) |
+| Cross-cutting concerns (log, cache) | [Decorator](structural-patterns.md#decorator), [Proxy](structural-patterns.md#proxy) |
+| Coordenação entre componentes | [Mediator](behavioral-patterns.md#mediator), [Facade](structural-patterns.md#facade) |
 
 ### WET — Write Everything Twice
 
@@ -342,6 +370,8 @@ account.withdraw(amount)  // lança exceção se saldo insuficiente
 | **Coesão** | Grau em que elementos de um módulo estão **relacionados entre si** | ALTA |
 | **Acoplamento** | Grau de **dependência** entre módulos | BAIXO |
 
+> **Relação com SOLID:** Alta coesão → [SRP](solid-principles.md#s--single-responsibility-principle-srp). Baixo acoplamento → [DIP](solid-principles.md#d--dependency-inversion-principle-dip) + [ISP](solid-principles.md#i--interface-segregation-principle-isp).
+
 ### Tipos de coesão (do pior para o melhor)
 
 | Tipo | Descrição |
@@ -466,7 +496,9 @@ Ao revisar ou criar código, verifique:
 
 ### Testabilidade
 
-- [ ] Dependências são injetáveis (não hardcoded)?
+- [ ] Dependências são injetáveis (não hardcoded)? → [DIP](solid-principles.md#d--dependency-inversion-principle-dip)
 - [ ] Efeitos colaterais são isoláveis?
-- [ ] Estado global é evitado?
+- [ ] Estado global é evitado? → [Singleton cuidados](creational-patterns.md#singleton)
 - [ ] Comportamento é verificável via testes unitários?
+
+> **Veja também:** [Princípios SOLID](solid-principles.md) para as bases teóricas, [Padrões Arquiteturais](architectural-patterns.md) para organização macro.

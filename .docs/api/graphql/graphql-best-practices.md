@@ -21,6 +21,8 @@
 13. [Testing](#13-testing)
 14. [Observabilidade](#14-observabilidade)
 15. [Padrões de Arquitetura](#15-padrões-de-arquitetura)
+16. [File Uploads](#16-file-uploads)
+17. [Query Batching](#17-query-batching)
 
 ---
 
@@ -1089,3 +1091,126 @@ type Order @key(fields: "id") {
 - [GraphQL Best Practices (graphql.org)](https://graphql.org/learn/best-practices/)
 - [Apollo Server Best Practices](https://www.apollographql.com/docs/apollo-server/)
 - [GraphQL Security Cheat Sheet (OWASP)](https://cheatsheetseries.owasp.org/cheatsheets/GraphQL_Cheat_Sheet.html)
+
+---
+
+## 16. File Uploads
+
+### Abordagens
+
+| Abordagem | Descrição | Recomendado |
+|-----------|-----------|:-----------:|
+| **Signed URLs** | GraphQL retorna URL pré-assinada, client faz upload direto (S3, GCS) | ✅ Preferível |
+| **Multipart Request** | Upload via `multipart/form-data` na mesma request GraphQL | ⚠️ Aceitável |
+| **Base64 no payload** | Encode do arquivo como string Base64 | ❌ Evitar |
+
+### Signed URL (Abordagem Recomendada)
+
+```graphql
+# 1. Solicitar URL de upload
+mutation RequestUpload($input: RequestUploadInput!) {
+  requestUpload(input: $input) {
+    uploadUrl        # URL pré-assinada (ex: S3 presigned URL)
+    fileId           # ID do arquivo para referência futura
+    expiresAt        # Expiração da URL
+  }
+}
+
+input RequestUploadInput {
+  filename: String!
+  contentType: String!
+  sizeBytes: Int!
+}
+
+# 2. Client faz upload direto para o storage (fora do GraphQL)
+# PUT {uploadUrl} com o arquivo
+
+# 3. Confirmar upload
+mutation ConfirmUpload($fileId: ID!) {
+  confirmUpload(fileId: $fileId) {
+    file {
+      id
+      url
+      filename
+      sizeBytes
+    }
+    errors {
+      message
+      code
+    }
+  }
+}
+```
+
+### Multipart Upload (graphql-upload spec)
+
+```javascript
+// Client-side com Apollo Upload Client
+import { createUploadLink } from 'apollo-upload-client';
+
+const link = createUploadLink({ uri: '/graphql' });
+
+// Mutation
+const UPLOAD_FILE = gql`
+  mutation UploadFile($file: Upload!) {
+    uploadFile(file: $file) {
+      id
+      url
+      filename
+    }
+  }
+`;
+```
+
+### Por que Signed URLs são preferíveis?
+
+- **Sem carga no servidor GraphQL** — upload vai direto para o storage
+- **Suporte a arquivos grandes** — sem limite de payload do GraphQL
+- **Resumable uploads** — possível com S3 multipart
+- **CDN friendly** — arquivos já estão no storage correto
+
+---
+
+## 17. Query Batching
+
+### HTTP Batching
+
+```http
+# Enviar múltiplas operações em um único request HTTP
+POST /graphql HTTP/1.1
+Content-Type: application/json
+
+[
+  {
+    "query": "query GetUser($id: ID!) { user(id: $id) { name } }",
+    "variables": { "id": "1" }
+  },
+  {
+    "query": "query GetProducts { products(first: 5) { edges { node { name } } } }"
+  }
+]
+```
+
+### Boas Práticas de Batching
+
+| Prática | Detalhes |
+|---------|---------|
+| **Limite de operações** | Máximo 10-20 operações por batch |
+| **Timeout por operação** | Cada operação deve ter seu próprio timeout |
+| **Erros independentes** | Falha em uma operação não deve afetar as outras |
+| **Complexidade total** | Some a complexidade de todas as queries do batch |
+| **Preferência** | Prefira compor queries GraphQL em vez de HTTP batching |
+
+### Quando Usar Batching vs Query Composition
+
+```graphql
+# ✅ Preferível: compor em uma única query
+query DashboardData {
+  currentUser { name avatar }
+  notifications(first: 5) { edges { node { message } } }
+  recentOrders(first: 3) { edges { node { status totalAmount } } }
+}
+
+# ⚠️ Batching: apenas quando as queries são de contextos diferentes
+# ou gerenciadas por componentes independentes
+```

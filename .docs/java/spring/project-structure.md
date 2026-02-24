@@ -1,4 +1,4 @@
-# Project Structure
+# Project Structure — Spring Boot
 
 > **Objetivo deste documento:** Servir como referência organizacional para o GitHub Copilot e desenvolvedores.
 > Foca exclusivamente na **forma de organizar pacotes, diretórios e convenções**, sem detalhar regras de negócio.
@@ -9,7 +9,7 @@
 
 ## Sumário
 
-- [Project Structure](#project-structure)
+- [Project Structure — Spring Boot](#project-structure--spring-boot)
   - [Sumário](#sumário)
   - [Stack Tecnológica](#stack-tecnológica)
   - [Estrutura de Diretórios](#estrutura-de-diretórios)
@@ -246,16 +246,15 @@ Código **reutilizável** entre pacotes.
 
 | Pacote              | Responsabilidade                              | Convenção                           |
 |---------------------|-----------------------------------------------|-------------------------------------|
-| `core.mapper`       | MapStruct mappers (request ↔ entity ↔ response) | Sufixo `Mapper`, interface + `MAPPER` singleton |
+| `core.mapper`       | MapStruct mappers (request ↔ entity ↔ response) | Sufixo `Mapper`, interface com `componentModel = "spring"` |
 | `core.validation`   | Grupos de validação (Bean Validation groups)  | Interface marker (`Create`, `Update`) |
 
 **Padrão de mapper:**
 
 ```java
-@Mapper(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface FooMapper {
-    FooMapper MAPPER = Mappers.getMapper(FooMapper.class);
-    
+
     FooEntity toEntity(FooRequest request);
     FooResponse toResponse(FooEntity entity);
     void update(FooRequest request, @MappingTarget FooEntity entity);
@@ -386,10 +385,13 @@ infrastructure/messaging/
 
 ```java
 @Component
-@RequiredArgsConstructor
 public class TransactionConsumer {
 
     private final TransactionService transactionService;
+
+    TransactionConsumer(TransactionService transactionService) {
+        this.transactionService = transactionService;
+    }
 
     @KafkaListener(topics = "${app.kafka.topics.transaction-created}", groupId = "${app.kafka.consumer.group-id}")
     public void consume(TransactionCreatedEvent event) {
@@ -402,10 +404,13 @@ public class TransactionConsumer {
 
 ```java
 @Component
-@RequiredArgsConstructor
 public class NotificationProducer {
 
     private final KafkaTemplate<String, NotificationRequestEvent> kafkaTemplate;
+
+    NotificationProducer(KafkaTemplate<String, NotificationRequestEvent> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
 
     public void send(NotificationRequestEvent event) {
         kafkaTemplate.send("notification-request", event.id().toString(), event);
@@ -665,6 +670,8 @@ resilience4j:
 ```java
 @Service
 public record PaymentService(PaymentClient paymentClient) {
+
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     @CircuitBreaker(name = "paymentService", fallbackMethod = "fallbackCharge")
     @Retry(name = "paymentService")
@@ -930,7 +937,7 @@ public ResponseEntity<Page<UserResponse>> findAll(
 @Transactional(readOnly = true)
 public Page<UserResponse> findAll(Pageable pageable) {
     return userRepository.findAll(pageable)
-            .map(UserMapper.MAPPER::toResponse);
+            .map(userMapper::toResponse);
 }
 ```
 
@@ -962,10 +969,13 @@ infrastructure/cors/
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
+    @Value("${app.cors.allowed-origins}")
+    private String[] allowedOrigins;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-            .allowedOrigins("${app.cors.allowed-origins}")
+            .allowedOrigins(allowedOrigins)
             .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
             .allowedHeaders("*")
             .exposedHeaders("Location", "X-Total-Count")
@@ -1197,7 +1207,7 @@ Ao adicionar um novo recurso, siga esta checklist:
 
 ### 2. Core
 
-- [ ] `core/mapper/FooMapper.java` — MapStruct interface com `MAPPER` singleton
+- [ ] `core/mapper/FooMapper.java` — MapStruct interface com `componentModel = "spring"`
 
 ### 3. API (REST)
 

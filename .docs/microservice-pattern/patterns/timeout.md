@@ -2,6 +2,7 @@
 
 > **Categoria:** Resiliência
 > **Complementa:** Circuit Breaker, Retry, Bulkhead
+> **Keywords:** resiliência, timeout, time limiter, bloqueio, latência, thread pool, deadline propagation
 
 ---
 

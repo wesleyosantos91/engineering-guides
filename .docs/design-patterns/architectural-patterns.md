@@ -84,6 +84,17 @@ específica e só pode depender de camadas **inferiores** (ou adjacentes).
 - Rigidez: nem toda aplicação precisa de todas as camadas.
 - Sem inversão de dependência, Infrastructure fica acoplada ao Domain.
 
+### Sinais de que a arquitetura precisa evoluir
+
+| Sinal | Ação sugerida |
+|-------|---------------|
+| Regras de negócio dependem de frameworks/banco | Migrar para Hexagonal ou Clean |
+| Testes unitários precisam de banco/API real | Extrair Ports & Adapters |
+| Camadas se tornam "passthrough" sem lógica | Simplificar ou colapsar camadas |
+| Múltiplos serviços precisam se comunicar | Considerar Event-Driven |
+
+> **Veja também:** [DIP em SOLID](solid-principles.md#d--dependency-inversion-principle-dip), [Separation of Concerns](best-practices.md#separation-of-concerns)
+
 ---
 
 ## Hexagonal Architecture (Ports & Adapters)
@@ -151,6 +162,18 @@ Proposta por **Alistair Cockburn** (2005). Também conhecida como "Ports and Ada
 - Curva de aprendizado para equipes acostumadas com layered.
 - Para aplicações muito simples (CRUD), pode ser over-engineering.
 
+### Relação com Design Patterns
+
+| Pattern | Uso na Hexagonal |
+|---------|------------------|
+| [Adapter](structural-patterns.md#adapter) | Driven/Driving adapters implementam as portas |
+| [Strategy](behavioral-patterns.md#strategy) | Portas são essencialmente o padrão Strategy |
+| [Factory](creational-patterns.md#factory-method) | Cria adapters específicos por ambiente (test, prod) |
+| [Facade](structural-patterns.md#facade) | Application Service atua como Facade do domínio |
+| [Decorator](structural-patterns.md#decorator) | Adiciona cross-cutting concerns nos adapters |
+
+> **Veja também:** [DIP em SOLID](solid-principles.md#d--dependency-inversion-principle-dip), [Program to an Interface](best-practices.md#program-to-an-interface-not-an-implementation)
+
 ---
 
 ## Clean Architecture
@@ -217,6 +240,18 @@ sempre para **dentro** (em direção ao domínio). Proposta por **Robert C. Mart
 - Mappers entre camadas podem gerar muito código boilerplate.
 - O benefício é proporcional à **complexidade do domínio**.
 
+### Relação com Design Patterns
+
+| Pattern | Uso na Clean Architecture |
+|---------|---------------------------|
+| [Strategy](behavioral-patterns.md#strategy) | Use Cases podem usar strategies para variações de regras |
+| [Command](behavioral-patterns.md#command) | Use Cases frequentemente são modelados como Commands |
+| [Observer](behavioral-patterns.md#observer) | Domain Events para notificação entre Use Cases |
+| [Adapter](structural-patterns.md#adapter) | Interface Adapters convertem entre domínio e frameworks |
+| [Factory](creational-patterns.md#factory-method) | Criação de entidades e value objects complexos |
+
+> **Veja também:** [SOLID](solid-principles.md) (Clean Architecture é uma aplicação direta dos princípios SOLID em nível arquitetural)
+
 ---
 
 ## MVC — Model-View-Controller
@@ -269,6 +304,16 @@ Separar a aplicação em três componentes interconectados: **dados** (Model),
 - Controllers podem crescer demais ("fat controller") — extraia lógica para services.
 - MVC não define claramente onde ficam as regras de negócio complexas.
 - Para APIs puras (sem UI), prefira arquiteturas baseadas em camadas ou hexagonal.
+
+### Sinais de evolução
+
+| Sinal | Ação sugerida |
+|-------|---------------|
+| Controllers com centenas de linhas | Extrair para Services (Application Layer) |
+| Model contendo lógica de apresentação | Separar DTOs/ViewModels |
+| Regras de negócio em Controllers | Migrar para domínio (Hexagonal/Clean) |
+
+> **Veja também:** [Observer](behavioral-patterns.md#observer) (Model-View usa Observer), [Strategy](behavioral-patterns.md#strategy), [Facade](structural-patterns.md#facade)
 
 ---
 
@@ -338,6 +383,17 @@ Proposto por **Greg Young**, baseado no princípio CQS (Command-Query Separation
 - **Over-engineering:** para CRUDs simples, é excessivo.
 - **CQRS não é um substituto para bom design de domínio.**
 
+### Relação com Design Patterns
+
+| Pattern | Uso no CQRS |
+|---------|-------------|
+| [Command](behavioral-patterns.md#command) | Commands encapsulam intenções de escrita |
+| [Mediator](behavioral-patterns.md#mediator) | Roteia commands/queries para handlers (ex: MediatR) |
+| [Observer](behavioral-patterns.md#observer) | Eventos sincronizam read/write models |
+| [Strategy](behavioral-patterns.md#strategy) | Diferentes estratégias de leitura/projeção |
+
+> **Veja também:** [Event Sourcing](#event-sourcing), [Command Pattern](behavioral-patterns.md#command)
+
 ---
 
 ## Event Sourcing
@@ -387,6 +443,16 @@ em vez de armazenar apenas o último estado.
 - **Evolução de schema:** eventos são imutáveis — upcasting/versioning é necessário.
 - **Debugging:** entender o estado requer reproduzir o histórico.
 - **Storage:** o volume de eventos pode crescer significativamente.
+
+### Relação com Design Patterns
+
+| Pattern | Uso no Event Sourcing |
+|---------|-----------------------|
+| [Memento](behavioral-patterns.md#memento) | Snapshots são essencialmente Mementos do aggregate |
+| [Observer](behavioral-patterns.md#observer) | Projections são observers dos eventos |
+| [Command](behavioral-patterns.md#command) | Commands geram eventos ao serem processados |
+
+> **Veja também:** [CQRS](#cqrs--command-query-responsibility-segregation), [Imutabilidade](best-practices.md#imutabilidade)
 
 ---
 
@@ -440,6 +506,50 @@ promovendo desacoplamento e reatividade.
 - **Debugging:** rastrear fluxo de eventos distribuídos é desafiador.
 - **Ordering:** garantir ordem de eventos pode ser complexo.
 - **Idempotência:** consumidores devem tratar duplicatas.
+
+### Relação com Design Patterns
+
+| Pattern | Uso no Event-Driven |
+|---------|---------------------|
+| [Observer](behavioral-patterns.md#observer) | Pub/Sub é Observer distribuído |
+| [Mediator](behavioral-patterns.md#mediator) | Message Broker atua como mediador |
+| [Chain of Responsibility](behavioral-patterns.md#chain-of-responsibility) | Pipelines de processamento de eventos |
+| [Command](behavioral-patterns.md#command) | Eventos podem carregar intenções de ação |
+
+> **Veja também:** [Observer](behavioral-patterns.md#observer), [Defensive Programming](best-practices.md#defensive-programming) (idempotência é essencial)
+
+---
+
+## Combinações Práticas
+
+Arquiteturas reais frequentemente combinam múltiplos padrões:
+
+| Combinação | Quando usar | Complexidade |
+|-----------|-------------|---------------|
+| **Hexagonal + CQRS** | Domínio rico com perfis de leitura/escrita distintos | Alta |
+| **Clean + Event Sourcing** | Domínio complexo com requisitos de auditoria | Muito alta |
+| **Layered + MVC** | Aplicações web tradicionais | Baixa |
+| **Hexagonal + Event-Driven** | Microserviços com domínio rico | Alta |
+| **CQRS + Event Sourcing + Event-Driven** | Sistemas distribuídos com auditoria completa | Muito alta |
+| **Layered + CQRS (lógico)** | CQRS simplificado sem banco separado | Média |
+
+### Guia de evolução progressiva
+
+```
+Início: Layered Architecture simples
+│
+├── Domínio ficou complexo?
+│   └── Evoluir para Hexagonal
+│
+├── Leitura e escrita com perfis muito diferentes?
+│   └── Adicionar CQRS (primeiro lógico, depois físico)
+│
+├── Auditoria/histórico é requisito?
+│   └── Adotar Event Sourcing (geralmente + CQRS)
+│
+└── Múltiplos serviços precisam se comunicar?
+    └── Adotar Event-Driven Architecture
+```
 
 ---
 

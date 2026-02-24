@@ -2,6 +2,7 @@
 
 > **Categoria:** Resiliência
 > **Pré-requisitos:** Circuit Breaker, Retry, Timeout, Rate Limiter, Bulkhead
+> **Keywords:** resiliência, composição de padrões, ordenação, camadas de proteção, combinação de resiliência
 
 ---
 

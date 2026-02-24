@@ -96,6 +96,22 @@ e fornecer um ponto de acesso global a ela.
 - **Injeção de Dependência** com escopo singleton (gerenciado pelo container DI).
 - Na maioria dos frameworks modernos, o container IoC gerencia o ciclo de vida — prefira isso.
 
+### Sinais no código (quando considerar Singleton)
+
+- Múltiplas instâncias do mesmo recurso compartilhado causando conflitos.
+- Acesso repetido a configurações globais com instanciação redundante.
+- Pool de recursos sendo recriado desnecessariamente.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **SRP** | O Singleton deve ser responsável apenas pela sua lógica principal, não pela gestão do ciclo de vida |
+| **DIP** | Prefira DI com escopo singleton para não violar — evita acoplamento ao `getInstance()` |
+| **OCP** | Singleton dificulta extensão; considere Factory + DI para manter extensível |
+
+> **Veja também:** [DIP em Princípios SOLID](solid-principles.md#d--dependency-inversion-principle-dip), [Facade](structural-patterns.md#facade)
+
 ---
 
 ## Factory Method
@@ -149,10 +165,27 @@ qual classe concreta instanciar.
 - Respeita **SRP**: a lógica de criação fica em um único lugar.
 - Respeita **OCP**: novos produtos podem ser adicionados sem alterar código existente.
 
+### Sinais no código (quando considerar Factory Method)
+
+- Blocos `if/else` ou `switch/case` para decidir qual classe instanciar.
+- `new ConcreteClass()` espalhados pelo código, acoplando a tipos concretos.
+- Necessidade de adicionar novos tipos frequentemente, alterando código existente.
+- Testes difíceis porque não é possível substituir a criação de objetos.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **SRP** | Isola a lógica de criação em um único lugar |
+| **OCP** | Novos produtos = nova subclasse de Creator, sem alterar código existente |
+| **DIP** | O cliente depende da abstração (Creator/Product), não da classe concreta |
+
 ### Trade-offs
 
 - Pode levar a muitas subclasses paralelas (Creator + Product).
 - Para casos simples, um `if/switch` pode ser suficiente (Simple Factory).
+
+> **Veja também:** [Abstract Factory](#abstract-factory), [Template Method](behavioral-patterns.md#template-method), [OCP em SOLID](solid-principles.md#o--openclosed-principle-ocp)
 
 ---
 
@@ -202,14 +235,31 @@ sem especificar suas classes concretas.
 - O sistema precisa garantir que produtos de uma família sejam usados juntos.
 - Você quer fornecer uma biblioteca de produtos revelando apenas interfaces.
 
+### Sinais no código (quando considerar Abstract Factory)
+
+- Múltiplos `if/else` verificando plataforma/ambiente para decidir qual conjunto de objetos criar.
+- Objetos de famílias diferentes sendo misturados erroneamente (ex: botão Windows + scrollbar macOS).
+- Criação de múltiplos objetos relacionados espalhada pelo código.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Nova família = nova factory concreta, sem alterar código existente |
+| **LSP** | Factories concretas são substituíveis pela interface abstrata |
+| **DIP** | Cliente depende de AbstractFactory e AbstractProduct, não concretos |
+| **ISP** | Cada factory expõe apenas os métodos de criação necessários para a família |
+
 ### Factory Method vs Abstract Factory
 
 | Aspecto | Factory Method | Abstract Factory |
-|---------|---------------|-----------------|
+|---------|---------------|------------------|
 | **Escopo** | Um produto | Família de produtos |
 | **Mecanismo** | Herança | Composição |
 | **Extensão** | Subclasses do Creator | Nova factory concreta |
 | **Complexidade** | Menor | Maior |
+
+> **Veja também:** [Factory Method](#factory-method), [Bridge](structural-patterns.md#bridge), [DIP em SOLID](solid-principles.md#d--dependency-inversion-principle-dip)
 
 ---
 
@@ -278,10 +328,28 @@ o mesmo processo de construção possa criar diferentes representações.
 - Permite construir objetos **imutáveis** passo a passo.
 - Permite reusar o mesmo processo para diferentes produtos.
 
+### Sinais no código (quando considerar Builder)
+
+- Construtores com mais de 3-4 parâmetros (constructor telescoping).
+- Muitos parâmetros `null` ou valores padrão passados manualmente.
+- Sequências de `setters` logo após `new`.
+- Objetos criados em estado inconsistente (parcialmente inicializados).
+- Necessidade de construir representações diferentes do mesmo tipo de objeto.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **SRP** | Separa a lógica de construção da lógica de negócio do objeto |
+| **OCP** | Novos builders permitem novas representações sem alterar o processo |
+| **ISP** | Step Builder cria interfaces específicas para cada passo de construção |
+
 ### Trade-offs
 
 - Aumento no número de classes.
 - Para objetos simples (poucos campos obrigatórios), um construtor normal é suficiente.
+
+> **Veja também:** [Composite](structural-patterns.md#composite) (Builder pode construir árvores Composite), [Fluent interfaces em Boas Práticas](best-practices.md)
 
 ---
 
@@ -329,13 +397,28 @@ evitando o custo de criação do zero.
 - Quando o sistema deve ser independente de como os produtos são criados.
 - Quando se precisa criar objetos cuja classe é determinada apenas em tempo de execução.
 
+### Sinais no código (quando considerar Prototype)
+
+- Criação de objetos envolve operações custosas (I/O, parsing, cálculos pesados).
+- Muita duplicação de código de inicialização para criar variantes de um objeto.
+- Sistema precisa criar objetos a partir de configurações descobertas em runtime.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Novos protótipos podem ser registrados sem modificar código de criação |
+| **DIP** | O cliente depende da interface Prototype, não das classes concretas |
+
 ### Cuidados
 
 | Aspecto | Descrição |
-|---------|-----------|
+|---------|----------|
 | **Shallow copy vs Deep copy** | Cópias rasas compartilham referências; cópias profundas duplicam tudo |
 | **Referências circulares** | Clonagem profunda pode entrar em loop — precisa de tratamento |
 | **Identidade** | O clone deve ter seu próprio ID? Depende do domínio |
+
+> **Veja também:** [Abstract Factory](#abstract-factory) (pode usar Prototype para criar produtos), [Imutabilidade em Boas Práticas](best-practices.md#imutabilidade)
 
 ---
 

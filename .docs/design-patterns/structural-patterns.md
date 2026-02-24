@@ -95,6 +95,24 @@ Permite que classes com interfaces incompatíveis trabalhem juntas.
 - Adiciona uma camada de indireção.
 - Se existem muitas adaptações, talvez o design precise ser repensado.
 
+### Sinais no código (quando considerar Adapter)
+
+- Precisa integrar biblioteca de terceiros com interface diferente da esperada.
+- Código legado com interface incompatível com o restante do sistema.
+- Conversão de formatos repetida em vários pontos (`toJSON`, `toXML`, wrappers manuais).
+- Testes impossíveis porque a dependência externa não implementa a interface esperada.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **SRP** | O Adapter se responsabiliza apenas pela conversão de interface |
+| **OCP** | Novos adapters podem ser adicionados sem alterar o código existente |
+| **ISP** | O Adapter pode expor uma interface segregada para o cliente |
+| **DIP** | O cliente depende de Target (abstração), não do Adaptee (concreto) |
+
+> **Veja também:** [Facade](#facade), [Bridge](#bridge), [DIP em SOLID](solid-principles.md#d--dependency-inversion-principle-dip)
+
 ---
 
 ## Bridge
@@ -153,6 +171,22 @@ possam variar independentemente.
 - Aumenta a complexidade do design com mais classes/interfaces.
 - Pode ser over-engineering se a variação em duas dimensões não é real.
 
+### Sinais no código (quando considerar Bridge)
+
+- Explosão combinatória de subclasses (ex: `WindowsButton`, `MacButton`, `LinuxButton` × `RoundButton`, `SquareButton`).
+- Classe que precisa ser estendida em duas dimensões independentes.
+- Necessidade de trocar implementação em runtime sem alterar a abstração.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Abstração e implementação podem ser estendidas independentemente |
+| **SRP** | Cada dimensão de variação é tratada separadamente |
+| **DIP** | Abstração depende de interface de implementação, não de concreto |
+
+> **Veja também:** [Abstract Factory](creational-patterns.md#abstract-factory) (pode criar os objetos do Bridge), [Strategy](behavioral-patterns.md#strategy)
+
 ---
 
 ## Composite
@@ -208,6 +242,22 @@ Permite que clientes tratem objetos individuais e composições de forma uniform
 - Dificulta restringir quais tipos podem ser filhos de um Composite.
 - Pode ser difícil manter invariantes da árvore (ex: profundidade máxima).
 - Componentes tornam-se mais genéricos — menos segurança de tipos.
+
+### Sinais no código (quando considerar Composite)
+
+- Estruturas de dados recursivas (menus, árvore de arquivos, expressões matemáticas).
+- Necessidade de tratar objetos individuais e coleções de forma uniforme.
+- Lógica duplicada para processar "um item" vs "grupo de itens".
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Novos tipos de folhas/composites podem ser adicionados sem alterar código existente |
+| **LSP** | Leaf e Composite são substituíveis via interface Component |
+| **ISP** | Pode haver tensão — Leaf implementa métodos de gerenciamento de filhos que não usa |
+
+> **Veja também:** [Iterator](behavioral-patterns.md#iterator), [Visitor](behavioral-patterns.md#visitor), [Builder](creational-patterns.md#builder) (para construir árvores)
 
 ---
 
@@ -286,6 +336,24 @@ Uma alternativa flexível à herança para estender funcionalidade.
 - A identidade do objeto muda (o objeto decorado é um wrapper, não o original).
 - A ordem dos decorators pode importar.
 
+### Sinais no código (quando considerar Decorator)
+
+- Explosão de subclasses para cada combinação de funcionalidades (ex: `CachedLoggedRetryRepository`).
+- Código de cross-cutting concerns (log, cache, retry, auth) duplicado em várias classes.
+- Necessidade de adicionar/remover comportamento em runtime.
+- Violação de OCP ao modificar classes existentes para adicionar funcionalidade.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Estende funcionalidade sem modificar a classe original |
+| **SRP** | Cada decorator é responsável por uma única preocupação (log, cache, etc.) |
+| **LSP** | O decorator é substituível pelo componente original via interface |
+| **DIP** | O decorator depende da interface Component, não da implementação concreta |
+
+> **Veja também:** [Strategy](behavioral-patterns.md#strategy), [Chain of Responsibility](behavioral-patterns.md#chain-of-responsibility), [Composição sobre Herança](best-practices.md#composição-sobre-herança)
+
 ---
 
 ## Facade
@@ -347,6 +415,23 @@ em um subsistema. Facade define uma interface de alto nível.
 - Pode se tornar um "God Object" se abarcar funcionalidades demais.
 - Não impede acesso direto ao subsistema — é uma conveniência, não uma restrição.
 
+### Sinais no código (quando considerar Facade)
+
+- Clientes precisam conhecer e coordenar múltiplas classes para realizar uma tarefa.
+- Código de setup/inicialização complexo duplicado em vários lugares.
+- Subsistema com API extensa onde clientes usam apenas uma fração.
+- Necessidade de fornecer API simplificada para equipes externas.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **SRP** | O Facade se responsabiliza por orquestrar, não por implementar |
+| **ISP** | O Facade expõe apenas as operações que os clientes realmente precisam |
+| **DIP** | Clientes dependem do Facade (abstração de alto nível), não dos subsistemas |
+
+> **Veja também:** [Mediator](behavioral-patterns.md#mediator), [Singleton](creational-patterns.md#singleton) (Facades frequentemente são singletons)
+
 ---
 
 ## Flyweight
@@ -406,6 +491,20 @@ de objetos granulares.
 - Complexidade: o código precisa gerenciar estado extrínseco separadamente.
 - Trade-off: RAM vs CPU (calcular estado extrínseco pode ter custo).
 - Nem sempre é necessário — meça antes de otimizar.
+
+### Sinais no código (quando considerar Flyweight)
+
+- Profiling mostra consumo de memória excessivo por objetos similares.
+- Milhões de objetos com grande parte do estado repetido.
+- Aplicação sofre com GC (garbage collection) frequente por excesso de alocações.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **SRP** | O FlyweightFactory gerencia o pool; o Flyweight cuida apenas do estado intrínseco |
+
+> **Veja também:** [Composite](#composite) (Flyweight frequentemente usado em folhas de Composite), [Imutabilidade](best-practices.md#imutabilidade)
 
 ---
 
@@ -478,6 +577,24 @@ Fornecer um **substituto ou placeholder** para outro objeto, controlando o acess
 
 - Adiciona indireção e latência.
 - Se usado em excesso, dificulta rastrear qual objeto está sendo acessado.
+
+### Sinais no código (quando considerar Proxy)
+
+- Inicialização de objetos pesados que nem sempre são usados (lazy loading).
+- Lógica de autorização/permissão misturada com lógica de negócio.
+- Cache de resultados espalhado manualmente pelo código.
+- Necessidade de logging/auditoria sem alterar as classes originais.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Adiciona controle de acesso sem modificar o RealSubject |
+| **SRP** | Separa preocupações de acesso (cache, log, auth) da lógica de negócio |
+| **LSP** | O Proxy é substituível pelo RealSubject via interface Subject |
+| **DIP** | O cliente depende da interface Subject, não do concreto |
+
+> **Veja também:** [Decorator](#decorator) (similar em estrutura, diferente em propósito), [Adapter](#adapter)
 
 ---
 

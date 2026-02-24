@@ -2,6 +2,7 @@
 
 > **Categoria:** Resiliência
 > **Complementa:** Bulkhead, API Gateway, Circuit Breaker
+> **Keywords:** resiliência, rate limiting, throttling, token bucket, sliding window, sobrecarga, proteção contra abuso
 
 ---
 

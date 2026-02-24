@@ -68,6 +68,16 @@ diferentes que poderiam causar alteração naquela classe, ela está fazendo coi
 - **Indireção:** mais classes significam mais navegação no código.
 - **Bom senso:** o princípio é uma **diretriz**, não uma lei absoluta. Use julgamento.
 
+### Exemplos de violação no código
+
+| Violação | Solução |
+|----------|--------|
+| Classe `UserService` que valida, salva no banco, envia e-mail e gera relatório | Extrair `UserValidator`, `UserRepository`, `EmailService`, `UserReportGenerator` |
+| Classe `OrderManager` com 2000+ linhas | Dividir por responsabilidade: `OrderCreator`, `OrderCalculator`, `OrderShipper` |
+| Controller que contém regras de negócio, validação e serialização | Extrair para Service, Validator e Serializer |
+
+> **Padrões que ajudam:** [Facade](structural-patterns.md#facade), [Mediator](behavioral-patterns.md#mediator), [Command](behavioral-patterns.md#command)
+
 ---
 
 ## O — Open/Closed Principle (OCP)
@@ -105,6 +115,16 @@ Você deve conseguir adicionar novos comportamentos **sem alterar** o código ex
 - **Over-engineering:** nem toda classe precisa ser extensível desde o primeiro dia.
 - **Abstrações prematuras:** crie abstrações quando houver **variação real**, não especulativa.
 - **Regra dos 3:** considere abstrair quando o padrão se repetir pela terceira vez.
+
+### Exemplos de violação no código
+
+| Violação | Solução |
+|----------|--------|
+| `if (type == "A") {...} else if (type == "B") {...}` que cresce a cada novo tipo | Usar polimorfismo via [Strategy](behavioral-patterns.md#strategy) ou [Factory Method](creational-patterns.md#factory-method) |
+| Método que precisa ser alterado toda vez que um novo formato de exportação é adicionado | Usar [Strategy](behavioral-patterns.md#strategy) com `ExportStrategy` |
+| Classe base modificada para cada nova funcionalidade | Usar [Decorator](structural-patterns.md#decorator) para estender comportamento |
+
+> **Padrões que ajudam:** [Strategy](behavioral-patterns.md#strategy), [Decorator](structural-patterns.md#decorator), [Observer](behavioral-patterns.md#observer), [Template Method](behavioral-patterns.md#template-method)
 
 ---
 
@@ -150,6 +170,17 @@ expectativa ao forçar ambas dimensões a serem iguais.
 - **Herança nem sempre é a resposta:** quando LSP é difícil de garantir, prefira composição.
 - **Design by Contract:** considere documentar contratos explicitamente (pré, pós, invariantes).
 
+### Exemplos de violação no código
+
+| Violação | Solução |
+|----------|--------|
+| Classe filha que lança `NotImplementedException` em método herdado | Repensar a hierarquia; provavelmente não é um subtipo verdadeiro |
+| `ReadOnlyList` que herda de `List` e lança exceção em `add()` | Usar interface segregada (ISP): `Readable` vs `Writable` |
+| Subtipo que muda o comportamento esperado (ex: retorna dados em formato diferente) | Garantir contrato: mesmas pré/pós-condições |
+
+> **Padrões que ajudam:** [Factory Method](creational-patterns.md#factory-method), [Abstract Factory](creational-patterns.md#abstract-factory) (garantem subtipos corretos)
+> **Veja também:** [Composição sobre Herança](best-practices.md#composição-sobre-herança)
+
 ---
 
 ## I — Interface Segregation Principle (ISP)
@@ -185,6 +216,16 @@ expectativa ao forçar ambas dimensões a serem iguais.
 
 - **Muitas interfaces:** excesso de granularidade pode dificultar a navegação.
 - **Equilíbrio:** agrupe métodos que são **sempre usados juntos** na mesma interface.
+
+### Exemplos de violação no código
+
+| Violação | Solução |
+|----------|--------|
+| Interface `Repository` com `save`, `delete`, `find`, `export`, `import`, `audit` | Segregar: `WriteRepository`, `ReadRepository`, `ExportService`, `AuditService` |
+| Interface `Worker` com `work()` e `eat()` — robôs não comem | Segregar: `Workable` e `Feedable` |
+| Classe forçada a implementar 15 métodos quando usa apenas 3 | Dividir em interfaces por papel/respons. |
+
+> **Padrões que ajudam:** [Adapter](structural-patterns.md#adapter), [Facade](structural-patterns.md#facade) (expõem interfaces segregadas)
 
 ---
 
@@ -240,17 +281,51 @@ expectativa ao forçar ambas dimensões a serem iguais.
 - **Não abstraia tudo:** nem toda dependência precisa ser invertida (ex: utilidades de string).
 - **Pragmatismo:** aplique DIP nas fronteiras do sistema (banco, APIs externas, mensageria).
 
+### Exemplos de violação no código
+
+| Violação | Solução |
+|----------|--------|
+| `new MySQLRepository()` direto no Service | Injetar `Repository` (interface) via construtor |
+| Service que faz `HttpClient.get()` diretamente | Criar `ExternalGateway` (interface) e injetar |
+| Testes impossíveis porque dependência é concreta e não substituível | Extrair interface e usar DI container |
+| Classe de domínio importando framework de persistência | Mover dependência para adapter (Hexagonal) |
+
+> **Padrões que ajudam:** [Abstract Factory](creational-patterns.md#abstract-factory), [Strategy](behavioral-patterns.md#strategy), [Hexagonal Architecture](architectural-patterns.md#hexagonal-architecture-ports--adapters)
+> **Veja também:** [Program to an Interface](best-practices.md#program-to-an-interface-not-an-implementation)
+
 ---
 
 ## Relação entre SOLID e Design Patterns
 
 | Princípio | Padrões que ajudam a aplicá-lo |
 |-----------|-------------------------------|
-| **SRP** | Facade, Mediator, Command |
-| **OCP** | Strategy, Decorator, Observer, Template Method |
-| **LSP** | Factory Method, Abstract Factory (garantem subtipos corretos) |
-| **ISP** | Adapter, Facade (expõem interfaces segregadas) |
-| **DIP** | Abstract Factory, Strategy, Repository, Dependency Injection |
+| **SRP** | [Facade](structural-patterns.md#facade), [Mediator](behavioral-patterns.md#mediator), [Command](behavioral-patterns.md#command) |
+| **OCP** | [Strategy](behavioral-patterns.md#strategy), [Decorator](structural-patterns.md#decorator), [Observer](behavioral-patterns.md#observer), [Template Method](behavioral-patterns.md#template-method) |
+| **LSP** | [Factory Method](creational-patterns.md#factory-method), [Abstract Factory](creational-patterns.md#abstract-factory) (garantem subtipos corretos) |
+| **ISP** | [Adapter](structural-patterns.md#adapter), [Facade](structural-patterns.md#facade) (expõem interfaces segregadas) |
+| **DIP** | [Abstract Factory](creational-patterns.md#abstract-factory), [Strategy](behavioral-patterns.md#strategy), [Hexagonal](architectural-patterns.md#hexagonal-architecture-ports--adapters) |
+
+### Guia de decisão: qual princípio aplicar primeiro?
+
+```
+Analisando código problemático?
+│
+├── Classe faz coisas demais / muitos motivos para mudar?
+│   └── Aplicar SRP (dividir responsabilidades)
+│
+├── Precisa modificar código existente para cada nova feature?
+│   └── Aplicar OCP (criar pontos de extensão)
+│
+├── Subclasse quebra comportamento esperado?
+│   └── Verificar LSP (repensar hierarquia ou usar composição)
+│
+├── Classe forçada a implementar métodos que não usa?
+│   └── Aplicar ISP (segregar interfaces)
+│
+└── Lógica de negócio depende de infraestrutura (banco, HTTP, framework)?
+    └── Aplicar DIP (extrair interface + injeção de dependência)
+```
 
 > **Dica:** Design Patterns são **implementações concretas** dos princípios SOLID.
 > Entender SOLID primeiro torna o aprendizado de patterns muito mais natural.
+> **Veja também:** [Boas Práticas de Design](best-practices.md), [Padrões Arquiteturais](architectural-patterns.md)

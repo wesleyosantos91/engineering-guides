@@ -1,13 +1,28 @@
 # SOLID Principles — Guia Teórico
 
-> **Objetivo deste documento:** Servir como referência teórica completa sobre os princípios SOLID.
-> Abordagem **agnóstica de linguagem** — foca exclusivamente em conceitos, motivações, heurísticas e boas práticas, sem código vinculado a uma tecnologia específica.
+> **Objetivo deste documento:** Servir como referência teórica completa sobre os princípios SOLID, otimizada para uso como **base de conhecimento para assistentes de código (Copilot/AI)** e consulta humana.
+> Abordagem **agnóstica de linguagem** — foca em conceitos, motivações, heurísticas, boas práticas e **pseudocódigo ilustrativo** sem vínculo a tecnologia específica.
+
+---
+
+## Quick Reference — Cheat Sheet
+
+| Princípio | Regra de ouro | Violação típica | Correção |
+|-----------|--------------|------------------|----------|
+| **SRP** | Um módulo, um motivo para mudar | God Class com múltiplas responsabilidades | Extrair classes por ator/eixo de mudança |
+| **OCP** | Estender sem modificar código existente | Cadeia `if/else` sobre tipos | Polimorfismo via Strategy/Factory |
+| **LSP** | Subtipo substitui tipo base sem surpresas | Subtipo lança exceção inesperada ou ignora método | Revisitar hierarquia; preferir composição |
+| **ISP** | Cliente não depende do que não usa | Interface com 15+ métodos, implementações com stubs vazios | Segregar em role interfaces menores |
+| **DIP** | Depender de abstrações, não de concretizações | Service instancia dependências com `new` | Injeção de dependência + interface no domínio |
+
+> **Decisão rápida:** Quando vir um code smell, consulte a tabela "Code smells que indicam violação de SOLID" nesta mesma seção para identificar qual princípio atacar primeiro.
 
 ---
 
 ## Sumário
 
 - [SOLID Principles — Guia Teórico](#solid-principles--guia-teórico)
+  - [Quick Reference — Cheat Sheet](#quick-reference--cheat-sheet)
   - [Sumário](#sumário)
   - [O que é SOLID?](#o-que-é-solid)
   - [Por que SOLID importa?](#por-que-solid-importa)
@@ -16,6 +31,8 @@
     - [Motivação](#motivação)
     - [Heurísticas para identificar violações](#heurísticas-para-identificar-violações)
     - [Boas Práticas](#boas-práticas)
+    - [Exemplo: antes e depois (pseudocódigo)](#exemplo-antes-e-depois-pseudocódigo)
+    - [Equívocos comuns](#equívocos-comuns)
     - [Anti-patterns comuns](#anti-patterns-comuns)
     - [Relação com outros princípios](#relação-com-outros-princípios)
   - [O — Open/Closed Principle (OCP)](#o--openclosed-principle-ocp)
@@ -24,6 +41,8 @@
     - [Mecanismos de extensão](#mecanismos-de-extensão)
     - [Heurísticas para identificar violações](#heurísticas-para-identificar-violações-1)
     - [Boas Práticas](#boas-práticas-1)
+    - [Exemplo: antes e depois (pseudocódigo)](#exemplo-antes-e-depois-pseudocódigo-1)
+    - [Equívocos comuns](#equívocos-comuns-1)
     - [Anti-patterns comuns](#anti-patterns-comuns-1)
     - [Relação com outros princípios](#relação-com-outros-princípios-1)
   - [L — Liskov Substitution Principle (LSP)](#l--liskov-substitution-principle-lsp)
@@ -32,6 +51,8 @@
     - [Regras formais](#regras-formais)
     - [Heurísticas para identificar violações](#heurísticas-para-identificar-violações-2)
     - [Boas Práticas](#boas-práticas-2)
+    - [Exemplo: antes e depois (pseudocódigo)](#exemplo-antes-e-depois-pseudocódigo-2)
+    - [Equívocos comuns](#equívocos-comuns-2)
     - [Anti-patterns comuns](#anti-patterns-comuns-2)
     - [Relação com outros princípios](#relação-com-outros-princípios-2)
   - [I — Interface Segregation Principle (ISP)](#i--interface-segregation-principle-isp)
@@ -39,6 +60,8 @@
     - [Motivação](#motivação-3)
     - [Heurísticas para identificar violações](#heurísticas-para-identificar-violações-3)
     - [Boas Práticas](#boas-práticas-3)
+    - [Exemplo: antes e depois (pseudocódigo)](#exemplo-antes-e-depois-pseudocódigo-3)
+    - [Equívocos comuns](#equívocos-comuns-3)
     - [Anti-patterns comuns](#anti-patterns-comuns-3)
     - [Relação com outros princípios](#relação-com-outros-princípios-3)
   - [D — Dependency Inversion Principle (DIP)](#d--dependency-inversion-principle-dip)
@@ -47,14 +70,19 @@
     - [Conceitos fundamentais](#conceitos-fundamentais)
     - [Heurísticas para identificar violações](#heurísticas-para-identificar-violações-4)
     - [Boas Práticas](#boas-práticas-4)
+    - [Exemplo: antes e depois (pseudocódigo)](#exemplo-antes-e-depois-pseudocódigo-4)
+    - [Equívocos comuns](#equívocos-comuns-4)
     - [Anti-patterns comuns](#anti-patterns-comuns-4)
     - [Relação com outros princípios](#relação-com-outros-princípios-4)
   - [SOLID na Prática — Diretrizes Gerais](#solid-na-prática--diretrizes-gerais)
     - [Quando aplicar](#quando-aplicar)
     - [Quando não aplicar (pragmatismo)](#quando-não-aplicar-pragmatismo)
     - [Code smells que indicam violação de SOLID](#code-smells-que-indicam-violação-de-solid)
+    - [Receitas de refatoração](#receitas-de-refatoração)
     - [Checklist de revisão](#checklist-de-revisão)
+  - [SOLID em Arquiteturas Modernas](#solid-em-arquiteturas-modernas)
   - [Relação entre os Princípios](#relação-entre-os-princípios)
+  - [Diretrizes para Code Review assistido por AI](#diretrizes-para-code-review-assistido-por-ai)
   - [Referências](#referências)
 
 ---
@@ -63,13 +91,17 @@
 
 SOLID é um acrônimo criado por **Michael Feathers** a partir de cinco princípios de design orientado a objetos identificados e promovidos por **Robert C. Martin (Uncle Bob)** no início dos anos 2000.
 
-| Letra | Princípio                          | Autor original      | Ano  |
-|-------|------------------------------------|----------------------|------|
-| **S** | Single Responsibility Principle    | Robert C. Martin     | 2003 |
-| **O** | Open/Closed Principle              | Bertrand Meyer       | 1988 |
-| **L** | Liskov Substitution Principle      | Barbara Liskov       | 1987 |
-| **I** | Interface Segregation Principle    | Robert C. Martin     | 1996 |
-| **D** | Dependency Inversion Principle     | Robert C. Martin     | 1996 |
+| Letra | Princípio                          | Autor original      | Ano de publicação formal |
+|-------|------------------------------------|----------------------|--------------------------|
+| **S** | Single Responsibility Principle    | Robert C. Martin     | 2003¹                    |
+| **O** | Open/Closed Principle              | Bertrand Meyer       | 1988                     |
+| **L** | Liskov Substitution Principle      | Barbara Liskov       | 1987²                    |
+| **I** | Interface Segregation Principle    | Robert C. Martin     | 1996                     |
+| **D** | Dependency Inversion Principle     | Robert C. Martin     | 1996                     |
+
+> ¹ SRP foi articulado por Uncle Bob no paper *Design Principles and Design Patterns* (2000) e formalizado no livro *Agile Software Development* (2003). A reformulação "um ator" veio em *Clean Architecture* (2017).
+>
+> ² O paper formal de Liskov & Wing (*A Behavioral Notion of Subtyping*) é de 1994, mas o conceito foi apresentado por Barbara Liskov em sua keynote de 1987.
 
 Esses princípios guiam o design de módulos, classes e interfaces para produzir software que seja:
 
@@ -140,6 +172,47 @@ Quando um módulo atende a múltiplos atores:
 
 5. **Agrupe por coesão, não por tipo técnico** — Agrupe o que muda junto, não o que "parece" similar tecnicamente.
 
+### Exemplo: antes e depois (pseudocódigo)
+
+**ANTES — violação do SRP** (classe serve a múltiplos atores):
+
+```
+class Employee:
+    calculatePay()        // ← Ator: Departamento Financeiro
+    generateReport()      // ← Ator: Departamento de Relatórios
+    saveToDatabase()      // ← Ator: DBA / Infraestrutura
+
+    // Três motivos para mudar, três atores distintos
+```
+
+**DEPOIS — SRP aplicado** (cada classe serve a um ator):
+
+```
+class PayCalculator:
+    calculatePay(employee)       // Ator: Financeiro
+
+class EmployeeReporter:
+    generateReport(employee)     // Ator: Relatórios
+
+class EmployeeRepository:
+    save(employee)               // Ator: Infraestrutura
+
+// A classe Employee mantém apenas os dados e comportamento
+// intrínsecos do domínio Employee
+class Employee:
+    name, role, salary
+    promote(newRole)             // Comportamento de domínio puro
+```
+
+### Equívocos comuns
+
+| Equívoco | Realidade |
+|----------|-----------|
+| "Uma classe deve fazer apenas uma coisa" | SRP fala de **um motivo para mudar** (um ator), não de um único método. Uma classe pode ter vários métodos desde que sirvam ao mesmo ator. |
+| "Cada classe deve ter apenas um método" | Classes com um único método indicam over-decomposition. O critério é coesão por ator, não contagem de métodos. |
+| "SRP = classes pequenas" | Tamanho é sintoma, não causa. Uma classe com 200 linhas pode ser SRP se todas servem ao mesmo ator. Uma com 50 linhas pode violar se serve a dois. |
+| "Aplicar SRP desde o primeiro dia" | Em muitos casos, é melhor esperar a segunda mudança revelar o eixo de variação antes de separar prematuramente. |
+
 ### Anti-patterns comuns
 
 | Anti-pattern       | Descrição                                                    |
@@ -203,6 +276,52 @@ O OCP se implementa através de abstrações. Os mecanismos mais comuns (indepen
 4. **Use o padrão Template Method para variação de etapas** — Quando a estrutura é fixa mas passos individuais variam, defina o esqueleto e deixe subtipos implementar os passos.
 
 5. **Prefira composição a herança** — Herança é um mecanismo forte de extensão, mas cria acoplamento rígido. Composição oferece mais flexibilidade.
+
+### Exemplo: antes e depois (pseudocódigo)
+
+**ANTES — violação do OCP** (toda nova forma de pagamento exige modificar código existente):
+
+```
+class PaymentProcessor:
+    process(payment):
+        if payment.type == "CREDIT_CARD":
+            // lógica cartão de crédito
+        else if payment.type == "BOLETO":
+            // lógica boleto
+        else if payment.type == "PIX":        // ← MUDANÇA: precisou abrir a classe
+            // lógica pix
+        // Cada novo método = modificação nesta classe
+```
+
+**DEPOIS — OCP aplicado** (novos métodos de pagamento sem tocar no código existente):
+
+```
+interface PaymentMethod:
+    process(payment)
+
+class CreditCardPayment implements PaymentMethod:
+    process(payment):  // ...
+
+class BoletoPayment implements PaymentMethod:
+    process(payment):  // ...
+
+class PixPayment implements PaymentMethod:     // ← EXTENSÃO: nova classe, sem tocar nas existentes
+    process(payment):  // ...
+
+class PaymentProcessor:
+    constructor(method: PaymentMethod)         // Recebe a estratégia via injeção
+    process(payment):
+        method.process(payment)                // Delega — fechado para modificação
+```
+
+### Equívocos comuns
+
+| Equívoco | Realidade |
+|----------|-----------|
+| "Nunca modifique código existente" | OCP é um **ideal direcional**, não uma proibição absoluta. Bug fixes e refatorações legítimas requerem modificação. O ponto é que **novos comportamentos** não devem exigir mudança no código estável. |
+| "Toda classe precisa de uma interface" | Crie abstrações apenas quando houver **variação real ou provável**. Interface para uma única implementação é overhead (YAGNI). |
+| "OCP = herança" | Herança é apenas um mecanismo. Composição, Strategy, Decorator e plugins também implementam OCP — frequentemente de forma superior. |
+| "Código 100% OCP é possível" | Nenhum design é fechado para todas as mudanças. Escolha **quais eixos de variação** proteger com base nos requisitos do negócio. |
 
 ### Anti-patterns comuns
 
@@ -272,6 +391,66 @@ O LSP estabelece regras precisas sobre o que um subtipo pode e não pode fazer:
 
 5. **Questione hierarquias profundas** — Quanto mais níveis de herança, mais difícil é garantir que todos os subtipos respeitem todos os contratos acumulados.
 
+### Exemplo: antes e depois (pseudocódigo)
+
+**ANTES — violação do LSP** (Square não é substituível por Rectangle):
+
+```
+class Rectangle:
+    width, height
+
+    setWidth(w):
+        this.width = w
+
+    setHeight(h):
+        this.height = h
+
+    area():
+        return this.width * this.height
+
+class Square extends Rectangle:
+    setWidth(w):
+        this.width = w
+        this.height = w    // ← Efeito colateral: altera height!
+
+    setHeight(h):
+        this.width = h     // ← Efeito colateral: altera width!
+        this.height = h
+
+// Código cliente espera comportamento de Rectangle:
+function resize(rect: Rectangle):
+    rect.setWidth(5)
+    rect.setHeight(10)
+    assert rect.area() == 50   // ← FALHA com Square! area() == 100
+```
+
+**DEPOIS — LSP respeitado** (composição em vez de herança incorreta):
+
+```
+interface Shape:
+    area(): number
+
+class Rectangle implements Shape:
+    constructor(width, height)
+    area(): return this.width * this.height
+
+class Square implements Shape:
+    constructor(side)
+    area(): return this.side * this.side
+
+// Ambos implementam Shape sem promessas de comportamento mutável
+// que não conseguem cumprir. O contrato é simples e respeitável.
+```
+
+### Equívocos comuns
+
+| Equívoco | Realidade |
+|----------|-----------|
+| "LSP é só sobre herança de classes" | LSP se aplica a **qualquer relação de subtipagem**: interfaces, generics, duck typing, ou qualquer contrato que o cliente espera. |
+| "Se compila, respeita LSP" | LSP é sobre **comportamento**, não sobre tipos. Um subtipo pode compilar perfeitamente e ainda violar contratos semânticos (ex: retornar null quando o contrato promete non-null). |
+| "Herança é sempre 'é-um'" | A relação "é-um" do mundo real nem sempre mapeia para herança no software. Um quadrado "é um" retângulo na geometria, mas no código, Square não pode substituir Rectangle se os setters se comportam diferente. |
+| "Basta não lançar exceção" | Não lançar exceção é necessário mas insuficiente. Pós-condições, invariantes e efeitos colaterais também devem ser preservados. |
+
 ### Anti-patterns comuns
 
 | Anti-pattern                     | Descrição                                                       |
@@ -326,6 +505,72 @@ Em termos práticos: **prefira várias interfaces específicas e coesas a uma in
 4. **Aplique o princípio da menor interface** — Se o cliente precisa de apenas um método, crie uma interface com um método. Interfaces de um único método (functional interfaces / SAM) são perfeitamente válidas.
 
 5. **Segregue por eixo de mudança** — Métodos que mudam juntos devem estar na mesma interface. Métodos que mudam por motivos diferentes devem ser separados.
+
+### Exemplo: antes e depois (pseudocódigo)
+
+**ANTES — violação do ISP** (interface gorda que força implementações desnecessárias):
+
+```
+interface Animal:
+    eat()
+    fly()
+    swim()
+    walk()
+
+class Dog implements Animal:
+    eat(): // ok
+    fly(): throw UnsupportedOperationException  // ← Forçado a implementar!
+    swim(): // ok
+    walk(): // ok
+
+class Fish implements Animal:
+    eat(): // ok
+    fly(): throw UnsupportedOperationException  // ← Forçado a implementar!
+    swim(): // ok
+    walk(): throw UnsupportedOperationException // ← Forçado a implementar!
+```
+
+**DEPOIS — ISP aplicado** (interfaces segregadas por capacidade):
+
+```
+interface Eater:
+    eat()
+
+interface Flyer:
+    fly()
+
+interface Swimmer:
+    swim()
+
+interface Walker:
+    walk()
+
+class Dog implements Eater, Swimmer, Walker:
+    eat(): // ...
+    swim(): // ...
+    walk(): // ...
+
+class Fish implements Eater, Swimmer:
+    eat(): // ...
+    swim(): // ...
+
+class Eagle implements Eater, Flyer, Walker:
+    eat(): // ...
+    fly(): // ...
+    walk(): // ...
+
+// Cada classe implementa apenas o que faz sentido.
+// Clientes dependem apenas da interface que precisam.
+```
+
+### Equívocos comuns
+
+| Equívoco | Realidade |
+|----------|-----------|
+| "Cada interface deve ter um único método" | ISP não diz "um método por interface". Diz que **clientes não devem depender do que não usam**. Uma interface com 3-5 métodos coesos é perfeitamente aceitável. |
+| "ISP só se aplica a interfaces explícitas" | Em linguagens com duck typing ou tipagem estrutural, o princípio se aplica a **qualquer contrato implícito**: parâmetros de função, structs, types, etc. |
+| "Segregar tudo resulta em melhor design" | Segregação excessiva leva a uma explosão de interfaces minúsculas que dificultam a navegação e compreensão. O critério é **necessidade do cliente**, não atomicidade. |
+| "ISP e SRP são a mesma coisa" | SRP fala sobre **motivos para mudar** (perspectiva do implementador). ISP fala sobre **dependências do cliente** (perspectiva do consumidor). São complementares, não idênticos. |
 
 ### Anti-patterns comuns
 
@@ -408,6 +653,67 @@ A **abstração pertence ao módulo de alto nível** — é o negócio que defin
 
 5. **Não abstraia tudo** — Classes concretas estáveis e que dificilmente mudarão (ex: tipos primitivos, estruturas de dados padrão) não precisam de abstração. O DIP se aplica a **componentes voláteis**.
 
+### Exemplo: antes e depois (pseudocódigo)
+
+**ANTES — violação do DIP** (alto nível depende diretamente do baixo nível):
+
+```
+class OrderService:
+    constructor():
+        this.repository = new MySQLOrderRepository()   // ← Dependência concreta!
+        this.emailer = new SmtpEmailSender()           // ← Dependência concreta!
+        this.logger = new FileLogger("/var/log/app")   // ← Dependência concreta!
+
+    createOrder(order):
+        this.repository.save(order)
+        this.emailer.send(order.customer.email, "Pedido criado!")
+        this.logger.log("Order created: " + order.id)
+
+// Impossível testar sem MySQL, SMTP e filesystem reais
+// Trocar MySQL por Postgres exige alterar lógica de negócio
+```
+
+**DEPOIS — DIP aplicado** (ambos dependem de abstrações):
+
+```
+// Abstrações definidas no módulo de DOMÍNIO (alto nível)
+interface OrderRepository:
+    save(order)
+
+interface NotificationSender:
+    notify(recipient, message)
+
+interface Logger:
+    log(message)
+
+// Alto nível depende de abstrações
+class OrderService:
+    constructor(repo: OrderRepository, notifier: NotificationSender, logger: Logger):
+        this.repository = repo
+        this.notifier = notifier
+        this.logger = logger
+
+    createOrder(order):
+        this.repository.save(order)
+        this.notifier.notify(order.customer.email, "Pedido criado!")
+        this.logger.log("Order created: " + order.id)
+
+// Implementações em módulo de INFRAESTRUTURA (baixo nível)
+class MySQLOrderRepository implements OrderRepository: // ...
+class PostgresOrderRepository implements OrderRepository: // ...
+class SmtpNotificationSender implements NotificationSender: // ...
+class InMemoryOrderRepository implements OrderRepository: // Para testes!
+```
+
+### Equívocos comuns
+
+| Equívoco | Realidade |
+|----------|-----------|
+| "DIP = Dependency Injection (DI)" | São conceitos **diferentes**. DIP é um **princípio de design** (depender de abstrações). DI é uma **técnica de implementação** (injetar dependências via construtor/método). DI ajuda a implementar DIP, mas não é sinônimo. |
+| "Toda classe precisa de uma interface" | Abstrair classes estáveis (ex: `String`, `List`, utilitários puros) é overhead sem valor. DIP se aplica a **fronteiras voláteis** — onde implementações podem mudar. |
+| "DIP é só para testes" | Testabilidade é um **benefício colateral**. O objetivo principal é proteger regras de negócio de mudanças em detalhes de infraestrutura e permitir evolução independente. |
+| "Service Locator implementa DIP" | Service Locator **esconde** dependências em vez de declará-las explicitamente, dificultando a compreensão e testabilidade. Prefer a injeção via construtor. |
+
 ### Anti-patterns comuns
 
 | Anti-pattern                       | Descrição                                                     |
@@ -451,6 +757,23 @@ SOLID **não é dogma**. Existem situações onde o custo da abstração supera 
 
 > **Regra de ouro:** *"Faça a coisa mais simples que funciona. Quando a simplicidade não for suficiente, aplique SOLID para gerenciar a complexidade."*
 
+### Métricas e limiares de referência
+
+Valores de referência para orientar decisões (não são regras rígidas):
+
+| Métrica | Limiar saudável | Sinal de alerta | Princípio relacionado |
+|---------|-----------------|------------------|-----------------------|
+| Linhas por classe/módulo | < 200 | > 300 | SRP |
+| Métodos públicos por classe | ≤ 7 | > 10 | SRP |
+| Métodos por interface | ≤ 5 | > 7 | ISP |
+| Dependências injetadas no construtor | ≤ 4 | > 5 | SRP |
+| Profundidade de herança | ≤ 2 | > 3 | LSP |
+| Branches em if/else sobre tipo | 0 (ideal) | ≥ 3 | OCP |
+| Cobertura de testes unitários | > 80% | < 60% | DIP (testabilidade) |
+| Imports de infraestrutura em domínio | 0 | > 0 | DIP |
+
+> Esses valores são **heurísticas**, não dogmas. Contexto, linguagem e domínio afetam os limiares adequados.
+
 ### Code smells que indicam violação de SOLID
 
 | Code Smell                     | Princípio violado | Ação                                          |
@@ -479,6 +802,92 @@ Use esta checklist em code reviews para validar aderência ao SOLID:
 - [ ] **ISP** — A interface pode ser dividida para atender melhor cada cliente?
 - [ ] **DIP** — A lógica de negócio depende de abstrações ou de implementações concretas?
 - [ ] **DIP** — A abstração pertence ao módulo de alto nível (domínio)?
+
+### Receitas de refatoração
+
+Passos concretos para corrigir as violações mais comuns:
+
+#### Receita 1: God Class → SRP
+
+1. **Identifique os atores** — Liste quem solicita mudanças nesta classe (ex: time financeiro, time de relatórios, DBA)
+2. **Agrupe métodos por ator** — Coloque cada grupo em uma lista separada
+3. **Extraia classe por grupo** — Crie uma nova classe para cada grupo de métodos com nome preciso
+4. **Mova dependências** — Cada nova classe recebe apenas as dependências que seus métodos precisam
+5. **Crie uma classe Facade (opcional)** — Se clientes existentes precisam de todos os métodos juntos, crie um facade que delega
+
+#### Receita 2: if/else sobre tipos → OCP
+
+1. **Identifique o eixo de variação** — Qual condição (`type`, `status`, `category`) determina o comportamento?
+2. **Extraia interface** — Crie uma interface com o método que varia (ex: `PaymentMethod.process()`)
+3. **Implemente por caso** — Cada branch do if/else vira uma classe que implementa a interface
+4. **Injete a implementação** — O consumidor recebe a implementação via construtor ou factory
+5. **Remova o if/else** — Substitua pela chamada polimórfica
+
+#### Receita 3: Herança incorreta → LSP
+
+1. **Identifique o contrato violado** — Qual pré-condição, pós-condição ou invariante o subtipo não respeita?
+2. **Avalie a relação semântica** — O subtipo realmente "é-um" tipo base no contexto do software (não do mundo real)?
+3. **Substitua por composição** — Se a relação não é "é-um", extraia uma interface comum e use composição/delegação
+4. **Escreva contract tests** — Crie testes que qualquer implementação da interface deve passar
+
+#### Receita 4: Fat Interface → ISP
+
+1. **Liste os clientes** — Identifique quem consome a interface
+2. **Mapeie uso por cliente** — Para cada cliente, liste quais métodos ele realmente usa
+3. **Agrupe por padrão de uso** — Métodos usados pelos mesmos clientes formam uma role interface
+4. **Segregue** — Crie as novas interfaces e faça a classe concreta implementar todas elas
+5. **Atualize clientes** — Cada cliente passa a depender apenas da interface que precisa
+
+#### Receita 5: Dependência direta → DIP
+
+1. **Identifique a fronteira** — Onde está o limite entre lógica de negócio e infraestrutura?
+2. **Extraia interface no domínio** — Crie a abstração no pacote/módulo de alto nível
+3. **Mova a implementação para infraestrutura** — A classe concreta fica no módulo de baixo nível
+4. **Injete via construtor** — O service de alto nível recebe a abstração no construtor
+5. **Configure a composição** — Em um composition root (ou framework DI), conecte as implementações
+
+---
+
+## SOLID em Arquiteturas Modernas
+
+Os princípios SOLID transcendem classes e se aplicam a **módulos, serviços e componentes** em arquiteturas modernas:
+
+### Hexagonal Architecture (Ports & Adapters)
+
+| Princípio | Aplicação na Hexagonal Architecture |
+|-----------|--------------------------------------|
+| **SRP** | Cada **port** (porta) é responsável por um tipo de interação (entrada/saída) específico |
+| **OCP** | Novos **adapters** podem ser adicionados sem alterar o domínio (core) |
+| **LSP** | Qualquer adapter deve respeitar o contrato definido pela port |
+| **ISP** | Ports devem ser segregadas — uma port por tipo de interação, não uma "God Port" |
+| **DIP** | O domínio define as ports (abstrações) → adapters (detalhes) as implementam. Dependência aponta para dentro |
+
+### Microservices
+
+| Princípio | Aplicação em Microservices |
+|-----------|---------------------------|
+| **SRP** | Cada serviço é responsável por um **bounded context** — um domínio de negócio coeso |
+| **OCP** | Novos serviços estendem o sistema sem alterar os existentes; eventos permitem extensão desacoplada |
+| **LSP** | Versionamento de APIs: v2 deve ser retro-compatível com clientes de v1 quando possível |
+| **ISP** | APIs devem expor apenas o que cada consumidor precisa (BFF pattern, GraphQL) |
+| **DIP** | Serviços dependem de contratos (schemas, protobuf, eventos), não de implementações internas de outros serviços |
+
+### Clean Architecture / Onion Architecture
+
+| Camada | Princípio dominante | Regra |
+|--------|---------------------|-------|
+| **Entities** | SRP + LSP | Entidades de domínio puras, sem dependências externas |
+| **Use Cases** | SRP + OCP | Cada caso de uso é uma unidade coesa; novos comportamentos = novos use cases |
+| **Interface Adapters** | DIP + ISP | Adaptam portas do domínio para frameworks/drivers externos |
+| **Frameworks & Drivers** | DIP | Detalhes de implementação; dependem das abstrações definidas pelas camadas internas |
+
+### Event-Driven Architecture
+
+| Princípio | Aplicação |
+|-----------|-----------|
+| **SRP** | Cada handler de evento é responsável por uma reação a um evento específico |
+| **OCP** | Novos handlers podem reagir a eventos existentes sem alterar produtores |
+| **DIP** | Produtores não conhecem consumidores — ambos dependem do contrato do evento |
 
 ---
 
@@ -535,6 +944,65 @@ Os cinco princípios não são independentes — eles se **reforçam mutuamente*
 | LSP → ISP | Contratos menores são mais fáceis de cumprir por subtipos         |
 | DIP → LSP | Implementações concretas devem respeitar a abstração do alto nível |
 | ISP → SRP | Interfaces segregadas refletem responsabilidades únicas           |
+
+---
+
+## Diretrizes para Code Review assistido por AI
+
+> Esta seção define **regras acionáveis** para que um assistente de código (Copilot, AI reviewer) identifique e sugira correções para violações SOLID.
+
+### Regras de detecção automática
+
+Ao revisar código, o assistente deve aplicar estas regras de detecção:
+
+| # | Regra de detecção | Princípio | Ação sugerida |
+|---|-------------------|-----------|---------------|
+| 1 | Classe com **mais de 300 linhas** ou **mais de 8 métodos públicos** | SRP | Sugerir extração de responsabilidades por ator/eixo de mudança |
+| 2 | Nome de classe contém **Manager, Handler, Processor, Utils, Helper, Service** genérico | SRP | Questionar se a classe serve a múltiplos atores; sugerir nome mais específico |
+| 3 | **Cadeia if/else ou switch/case** que verifica tipo, status ou categoria para decidir comportamento | OCP | Sugerir substituição por polimorfismo (Strategy, Factory) |
+| 4 | **Novo requisito requer modificar** classe/função existente em vez de adicionar nova | OCP | Sugerir ponto de extensão (interface + implementação) |
+| 5 | Subtipo com **método vazio, throw UnsupportedOperationException ou retorno de valor sentinela** (null, -1) | LSP | Sugerir revisão da hierarquia; recomendar composição |
+| 6 | Código cliente faz **type cast ou instanceof/type check** para decidir comportamento | LSP | Indicar que o subtipo não é substituível; sugerir refatoração |
+| 7 | Interface com **mais de 7 métodos** | ISP | Sugerir segregação em role interfaces menores |
+| 8 | Implementação de interface com **métodos stub (vazios ou exception)** | ISP + LSP | Sugerir segregação da interface |
+| 9 | Classe de negócio **instancia dependência com new** (repositório, client HTTP, logger) | DIP | Sugerir injeção de dependência via construtor + interface |
+| 10 | **Import de módulo de infraestrutura** dentro de módulo de domínio/negócio | DIP | Alertar inversão de dependência; abstração deve estar no domínio |
+| 11 | **Mais de 5 dependências injetadas** no construtor | SRP | Sugerir que a classe tem responsabilidades demais |
+| 12 | **Testes requerem infraestrutura real** (banco, rede, filesystem) para executar | DIP | Sugerir abstração de dependências externas e uso de mocks/stubs |
+
+### Níveis de severidade
+
+| Severidade | Quando usar | Exemplo |
+|------------|-------------|---------|
+| **Crítico** | Viola múltiplos princípios simultaneamente; impacta testabilidade e manutenibilidade | God Class com 1000+ linhas que instancia dependências diretamente |
+| **Alto** | Viola um princípio de forma clara; dificuldade futura garantida | Cadeia de 8 if/else sobre tipos sem abstração |
+| **Médio** | Viola parcialmente; impacto depende do contexto e da frequência de mudança | Interface com 10 métodos onde alguns clientes usam apenas 3 |
+| **Baixo** | Code smell leve; pode ser válido no contexto (protótipo, módulo estável) | Classe com 250 linhas com leve tendência a múltiplas responsabilidades |
+
+### Formato de sugestão
+
+Ao identificar uma violação, o assistente deve estruturar a sugestão assim:
+
+```
+**Princípio violado:** [SRP | OCP | LSP | ISP | DIP]
+**Severidade:** [Crítico | Alto | Médio | Baixo]
+**Problema:** Descrição objetiva do que está errado
+**Impacto:** Como isso prejudica manutenibilidade, testabilidade ou extensibilidade
+**Sugestão:** Passos concretos para corrigir (referenciando as receitas de refatoração acima)
+**Exemplo:** Pseudocódigo ou esboço do design corrigido
+```
+
+### Priorização
+
+Quando múltiplas violações coexistem, priorize nesta ordem:
+
+1. **DIP** — Corrigir direção de dependência primeiro (habilita testabilidade imediata)
+2. **SRP** — Separar responsabilidades (reduz escopo de cada componente)
+3. **OCP** — Introduzir pontos de extensão (previne futuras mudanças em cascata)
+4. **ISP** — Segregar interfaces (reduz acoplamento desnecessário)
+5. **LSP** — Corrigir hierarquias (garante polimorfismo confiável)
+
+> **Princípio geral:** Ataque primeiro o que **desbloqueia testabilidade** e depois o que **previne deterioração futura**.
 
 ---
 

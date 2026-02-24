@@ -88,6 +88,25 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── 19-heartbeat-health-checks/
 │   ├── 20-leader-election/
 │   ├── 21-consensus-algorithms/
+│   ├── 22-gossip-protocol/
+│   ├── 23-bloom-filters/
+│   ├── 24-websockets-long-polling-sse/
+│   ├── 25-rest-graphql-grpc/
+│   ├── 26-event-driven-architecture/
+│   ├── 27-cqrs/
+│   ├── 28-event-sourcing/
+│   ├── 29-saga-pattern/
+│   ├── 30-outbox-pattern/
+│   ├── 31-back-of-the-envelope-estimation/
+│   ├── 32-data-partitioning-strategies/
+│   ├── 33-replication-strategies/
+│   ├── 34-idempotency/
+│   ├── 35-oauth-jwt-authentication/
+│   ├── 36-url-shortener/
+│   ├── 37-pastebin/
+│   ├── 38-twitter-social-feed/
+│   ├── 39-instagram-photo-sharing/
+│   ├── 40-whatsapp-chat-system/
 │   └── system-design-big-techs.md
 └── terraform/                  # Terraform / IaC
     └── aws/
@@ -111,7 +130,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 | **Microservice Patterns** | 26 padrões essenciais para arquitetura de microsserviços |
 | **Quality Engineering** | Estratégias de testes e qualidade |
 | **SOLID** | Princípios SOLID aplicados |
-| **System Design** | 21 conceitos fundamentais de design de sistemas |
+| **System Design** | 30 conceitos fundamentais de design de sistemas |
 | **Terraform** | IaC com Terraform para AWS — estrutura, módulos, segurança e testes |
 
 ## Como usar com o GitHub Copilot

@@ -261,7 +261,7 @@ Contém **entidades, repositórios, serviços e exceções**.
 - **Tecnologia do banco como pacote**: `domain.repository.mysql.`, `domain.repository.postgresql.`, `domain.repository.mongodb.`
 - **Chaves primárias UUID** com `@GeneratedValue(strategy = GenerationType.UUID)`.
 - **Relacionamentos LAZY** entre entidades.
-- **`@Transactional`** (de `io.micronaut.transaction.annotation`) nos services.
+- **`@Transactional`** (de `jakarta.transaction.Transactional`) nos services para escrita; **`@ReadOnly`** (de `io.micronaut.transaction.annotation`) para leituras.
 - **`@Timed` e `@Counted`** (Micrometer) nos métodos de service para métricas.
 - **Micronaut Data**: Repositories estendem `JpaRepository` com query derivation em compile-time.
 

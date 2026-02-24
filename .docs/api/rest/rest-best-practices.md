@@ -22,6 +22,9 @@
 14. [Health Checks e Observabilidade](#14-health-checks-e-observabilidade)
 15. [Boas Práticas de Payload](#15-boas-práticas-de-payload)
 16. [Deprecation Strategy](#16-deprecation-strategy)
+17. [Content Negotiation](#17-content-negotiation)
+18. [Webhooks e Eventos](#18-webhooks-e-eventos)
+19. [Anti-patterns Comuns](#19-anti-patterns-comuns)
 
 ---
 
@@ -183,8 +186,8 @@ Content-Type: application/merge-patch+json
 ✅ Use headers de resposta para comunicar deprecation:
 
 HTTP/1.1 200 OK
-Deprecation: Sun, 01 Jan 2026 00:00:00 GMT
-Sunset: Sun, 01 Jul 2026 00:00:00 GMT
+Deprecation: Mon, 01 Jun 2026 00:00:00 GMT
+Sunset: Tue, 01 Dec 2026 00:00:00 GMT
 Link: </api/v2/users>; rel="successor-version"
 ```
 
@@ -262,7 +265,9 @@ GET /api/v1/products?sort=-created_at,name
 
 ## 6. Tratamento de Erros
 
-### Formato Padrão (RFC 7807 — Problem Details)
+### Formato Padrão (RFC 9457 — Problem Details for HTTP APIs)
+
+> **Nota**: RFC 9457 substituiu a RFC 7807 em 2023 como padrão para Problem Details. A estrutura é compatível, com melhorias na clareza das definições.
 
 ```json
 {
@@ -564,6 +569,17 @@ Content-Type: application/json
 - Use UUIDs v4 para gerar keys no client.
 - Obrigatório em operações financeiras e side-effects críticos.
 
+### Implementação Sugerida
+
+```
+1. Client envia request com header Idempotency-Key
+2. Server verifica se key já existe no cache/DB
+   → Se sim: retorna resposta armazenada (sem reprocessar)
+   → Se não: processa, armazena resposta com a key, retorna
+3. TTL da key: 24-48h
+4. Em caso de request em andamento com mesma key: retornar 409 Conflict
+```
+
 ---
 
 ## 13. Compressão e Performance
@@ -703,8 +719,8 @@ X-Request-Id: 550e8400-e29b-41d4-a716-446655440000
 
 ```http
 HTTP/1.1 200 OK
-Deprecation: Sun, 01 Jun 2026 00:00:00 GMT
-Sunset: Sun, 01 Dec 2026 00:00:00 GMT
+Deprecation: Mon, 01 Jun 2026 00:00:00 GMT
+Sunset: Tue, 01 Dec 2026 00:00:00 GMT
 Link: </api/v2/users>; rel="successor-version"
 Warning: 299 - "This endpoint is deprecated. Migrate to /api/v2/users by Dec 2026."
 ```
@@ -730,15 +746,136 @@ Warning: 299 - "This endpoint is deprecated. Migrate to /api/v2/users by Dec 202
 
 ---
 
+## 17. Content Negotiation
+
+### Accept Header
+
+```http
+# Client solicita formato específico
+GET /api/v1/users/123 HTTP/1.1
+Accept: application/json
+
+# Resposta com Content-Type correspondente
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+```
+
+### Formatos Suportados
+
+| Accept Header | Formato | Uso |
+|---------------|---------|-----|
+| `application/json` | JSON | Padrão para a maioria das APIs |
+| `application/xml` | XML | Legado ou requisitos regulatórios |
+| `text/csv` | CSV | Exportação de dados tabulares |
+| `application/pdf` | PDF | Relatórios |
+| `application/vnd.api+json` | JSON:API | APIs que seguem spec JSON:API |
+
+### Regras
+
+- Sempre retorne `Content-Type` na resposta.
+- Se o formato solicitado não for suportado, retorne `406 Not Acceptable`.
+- Defina um formato padrão (JSON) quando `Accept` não for enviado.
+- Use `Vary: Accept` para cache correto com múltiplos formatos.
+
+---
+
+## 18. Webhooks e Eventos
+
+### Design de Webhooks
+
+```http
+# Payload de webhook enviado pelo servidor
+POST https://client.example.com/webhooks HTTP/1.1
+Content-Type: application/json
+X-Webhook-Signature: sha256=abc123...
+X-Webhook-Id: evt_abc123
+X-Webhook-Timestamp: 2026-02-23T10:30:00Z
+
+{
+  "id": "evt_abc123",
+  "type": "order.completed",
+  "createdAt": "2026-02-23T10:30:00Z",
+  "data": {
+    "orderId": "ord_456",
+    "status": "COMPLETED",
+    "totalAmount": 5000
+  }
+}
+```
+
+### Boas Práticas de Webhooks
+
+| Prática | Descrição |
+|---------|-----------|
+| **Assinatura HMAC** | Assine o payload com HMAC-SHA256 para que o client valide autenticidade |
+| **Idempotency** | Inclua `X-Webhook-Id` único — client deve deduplicar |
+| **Retry com backoff** | Reenvie em caso de falha (5xx ou timeout) com backoff exponencial |
+| **Timeout curto** | Aguarde no máximo 5-10s pela resposta do client |
+| **Payload enxuto** | Envie dados essenciais — client busca detalhes via API se necessário |
+| **Registro de eventos** | Permita que clients listem eventos passados via endpoint de histórico |
+| **Versionamento** | Versione o payload de webhooks junto com a API |
+
+### Retry Policy
+
+```
+Tentativa 1: imediata
+Tentativa 2: após 1 minuto
+Tentativa 3: após 5 minutos
+Tentativa 4: após 30 minutos
+Tentativa 5: após 2 horas
+Tentativa 6: após 24 horas (final)
+```
+
+### Gerenciamento de Webhooks (API para o client)
+
+```http
+# Criar subscription
+POST /api/v1/webhooks
+{
+  "url": "https://client.example.com/webhooks",
+  "events": ["order.completed", "order.cancelled"],
+  "secret": "whsec_..."
+}
+
+# Listar subscriptions
+GET /api/v1/webhooks
+
+# Listar eventos enviados (histórico)
+GET /api/v1/webhooks/{webhookId}/events?status=failed
+```
+
+---
+
+## 19. Anti-patterns Comuns
+
+### Evite Estes Erros
+
+| Anti-pattern | Problema | Solução |
+|--------------|----------|--------|
+| Verbos na URI | `POST /createUser` | Use `POST /users` — método HTTP expressa a ação |
+| Status code genérico | Sempre retornar `200` com erro no body | Use status codes HTTP corretos (400, 404, etc.) |
+| Expor IDs do banco | `/users/AUTO_INCREMENT_47` | Use UUIDs ou IDs opacos |
+| Não paginar listas | `GET /users` retorna 100k registros | Sempre pagine com `page`/`size` ou cursor |
+| Ignorar versionamento | Mudar campos sem aviso | Use `/api/v1/` e respeite backward compatibility |
+| Aninhamento excessivo | `/a/{id}/b/{id}/c/{id}/d/{id}` | Máximo 3 níveis de profundidade |
+| Payload sensível na URL | `/users?token=abc123` | Dados sensíveis no body ou headers |
+| Ignorar `Content-Type` | Não validar conteúdo recebido | Valide e rejeite com `415 Unsupported Media Type` |
+| Cache sem validação | Cache sem `ETag`/`Last-Modified` | Sempre inclua headers de validação |
+| Erros inconsistentes | Formatos de erro diferentes por endpoint | Use RFC 9457 Problem Details em toda a API |
+
+---
+
 ## Referências
 
 - [RFC 7231 — HTTP Semantics](https://tools.ietf.org/html/rfc7231)
-- [RFC 7807 — Problem Details for HTTP APIs](https://tools.ietf.org/html/rfc7807)
+- [RFC 9457 — Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457) (substitui RFC 7807)
 - [RFC 7396 — JSON Merge Patch](https://tools.ietf.org/html/rfc7396)
 - [RFC 8288 — Web Linking](https://tools.ietf.org/html/rfc8288)
 - [RFC 6585 — Additional HTTP Status Codes (429)](https://tools.ietf.org/html/rfc6585)
+- [RFC 9110 — HTTP Semantics (substitui RFC 7231)](https://www.rfc-editor.org/rfc/rfc9110)
 - [Google API Design Guide](https://cloud.google.com/apis/design)
 - [Microsoft REST API Guidelines](https://github.com/microsoft/api-guidelines)
 - [Stripe API Reference](https://stripe.com/docs/api)
 - [Zalando RESTful API Guidelines](https://opensource.zalando.com/restful-api-guidelines/)
 - [OpenAPI Specification 3.1](https://spec.openapis.org/oas/latest.html)
+- [JSON:API Specification](https://jsonapi.org/)

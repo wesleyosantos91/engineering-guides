@@ -2,6 +2,17 @@
 
 > Guia centralizado de boas práticas para design, implementação e operação de APIs, cobrindo os três principais paradigmas do mercado.
 
+## Como Usar Este Guia
+
+Este guia serve como **base de conhecimento** para orientar decisões de design e implementação de APIs. Ao consultar:
+
+1. **Identifique o paradigma** adequado usando a seção [Quando Usar Cada Paradigma](#quando-usar-cada-paradigma).
+2. **Siga as boas práticas transversais** que se aplicam a qualquer tipo de API.
+3. **Consulte o documento específico** do paradigma escolhido para detalhes de implementação.
+4. **Priorize segurança e observabilidade** desde o início — não são itens opcionais.
+
+> **Regra geral**: quando em dúvida entre paradigmas, comece com REST para APIs externas e gRPC para comunicação interna entre serviços.
+
 ---
 
 ## Paradigmas de API
@@ -44,9 +55,26 @@
 | Caching HTTP | Nativo | Complexo | Não nativo |
 | Code generation | Opcional | Opcional | Obrigatório |
 | Ecossistema / Tooling | Vasto | Grande | Crescente |
-| Performance (latência) | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| Tamanho do payload | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| Performance (latência) | Boa | Boa | Excelente |
+| Tamanho do payload | Médio (JSON) | Médio (JSON) | Compacto (binário) |
 | Contratos/Tipagem | Fraca (OpenAPI) | Forte (Schema) | Forte (Protobuf) |
+
+### Critérios de Decisão
+
+Use estas perguntas para escolher o paradigma:
+
+| Pergunta | Se Sim → |
+|----------|----------|
+| A API será consumida por browsers ou clientes externos? | REST |
+| Múltiplos clientes precisam de dados diferentes do mesmo endpoint? | GraphQL |
+| Comunicação entre microserviços internos com requisitos de latência? | gRPC |
+| Precisa de streaming bidirecional em tempo real? | gRPC |
+| O time tem pouca experiência com APIs? | REST (menor curva) |
+| Precisa expor um grafo complexo de entidades para um frontend? | GraphQL |
+| Comunicação com dispositivos IoT ou banda limitada? | gRPC |
+| Necessidade de forte caching HTTP? | REST |
+
+> **Nota**: É comum combinar paradigmas — por exemplo, gRPC internamente entre serviços e REST ou GraphQL na borda (API Gateway).
 
 ---
 
@@ -89,3 +117,29 @@
 | [REST Best Practices](rest/rest-best-practices.md) | URIs, métodos HTTP, status codes, paginação, caching, segurança, OpenAPI |
 | [GraphQL Best Practices](graphql/graphql-best-practices.md) | Schema design, queries, mutations, pagination, federation, caching |
 | [gRPC Best Practices](grpc/grpc-best-practices.md) | Protobuf design, streaming, deadlines, interceptors, load balancing |
+
+---
+
+## API Gateway — Considerações Transversais
+
+Independente do paradigma, considere um API Gateway para centralizar:
+
+| Responsabilidade | Descrição |
+|------------------|-----------|
+| **Autenticação/Autorização** | Validação de tokens antes de chegar ao serviço |
+| **Rate Limiting** | Controle de abuso centralizado |
+| **Logging/Tracing** | Injeção de correlation IDs |
+| **TLS Termination** | Gestão centralizada de certificados |
+| **Routing** | Direcionamento para serviços corretos por path/header |
+| **Transformação** | Tradução entre protocolos (ex: REST → gRPC via gRPC-Gateway) |
+| **Circuit Breaking** | Proteção contra cascading failures |
+
+### Exemplos de Soluções
+
+| Solução | Tipo | Melhor Para |
+|---------|------|-------------|
+| **Kong** | Open-source | REST/GraphQL, plugins extensíveis |
+| **Envoy** | Open-source | gRPC nativo, service mesh (Istio) |
+| **AWS API Gateway** | Managed | REST/WebSocket na AWS |
+| **Apollo Router** | Open-source | GraphQL Federation |
+| **Apigee** | Managed | APIs públicas enterprise |

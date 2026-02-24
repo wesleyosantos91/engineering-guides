@@ -2,6 +2,7 @@
 
 > **Categoria:** Resiliência
 > **Complementa:** Circuit Breaker, Timeout
+> **Keywords:** resiliência, retry, backoff exponencial, jitter, falha transitória, reexecução, idempotência
 
 ---
 

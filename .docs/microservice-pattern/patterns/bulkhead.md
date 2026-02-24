@@ -3,6 +3,7 @@
 > **Categoria:** Resiliência
 > **Origem:** Analogia com os compartimentos estanques de um navio (bulkheads)
 > **Complementa:** Circuit Breaker, Timeout, Rate Limiter
+> **Keywords:** resiliência, isolamento, thread pool, semáforo, contenção de falhas, compartimentalização
 
 ---
 

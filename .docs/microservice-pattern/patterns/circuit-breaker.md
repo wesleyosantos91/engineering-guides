@@ -2,6 +2,7 @@
 
 > **Categoria:** Resiliência
 > **Origem:** Michael Nygard — *Release It!* (2007)
+> **Keywords:** resiliência, falha em cascata, fail-fast, fallback, half-open, dependência externa, disjuntor, sliding window
 
 ---
 

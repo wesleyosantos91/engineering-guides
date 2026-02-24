@@ -22,6 +22,8 @@
 14. [Observabilidade](#14-observabilidade)
 15. [Testing](#15-testing)
 16. [Padrões de Arquitetura](#16-padrões-de-arquitetura)
+17. [Graceful Shutdown](#17-graceful-shutdown)
+18. [gRPC Reflection](#18-grpc-reflection)
 
 ---
 
@@ -328,6 +330,7 @@ enum MessageType {
 | 12 | `UNIMPLEMENTED` | RPC não implementado |
 | 13 | `INTERNAL` | Erro interno do servidor |
 | 14 | `UNAVAILABLE` | Serviço temporariamente indisponível (retry) |
+| 15 | `DATA_LOSS` | Perda de dados irrecuperável |
 | 16 | `UNAUTHENTICATED` | Não autenticado |
 
 ### Mapeamento gRPC ↔ HTTP
@@ -344,6 +347,7 @@ enum MessageType {
 | `CANCELLED` | 499 |
 | `INTERNAL` | 500 |
 | `UNAVAILABLE` | 503 |
+| `DATA_LOSS` | 500 |
 | `DEADLINE_EXCEEDED` | 504 |
 
 ### Rich Error Model (Google Error Model)
@@ -1366,3 +1370,131 @@ rpc ActivateUser(ActivateUserRequest) returns (User);  // POST /users/{id}:activ
 - [Envoy gRPC Bridge](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/other_protocols/grpc)
 - [OpenTelemetry gRPC Instrumentation](https://opentelemetry.io/docs/instrumentation/)
 - [ghz — gRPC Benchmarking Tool](https://ghz.sh/)
+
+---
+
+## 17. Graceful Shutdown
+
+### Padrão de Shutdown (Go)
+
+```go
+func main() {
+    lis, _ := net.Listen("tcp", ":50051")
+    server := grpc.NewServer()
+    pb.RegisterUserServiceServer(server, &UserServiceServer{})
+
+    // Iniciar server em goroutine
+    go func() {
+        if err := server.Serve(lis); err != nil {
+            log.Fatalf("failed to serve: %v", err)
+        }
+    }()
+
+    // Aguardar sinal de shutdown
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+
+    log.Println("Shutting down gRPC server...")
+
+    // GracefulStop aguarda RPCs em andamento terminarem
+    // Novas conexões são recusadas imediatamente
+    server.GracefulStop()
+
+    log.Println("Server stopped")
+}
+```
+
+### Kubernetes Graceful Shutdown
+
+```yaml
+spec:
+  containers:
+    - name: user-service
+      lifecycle:
+        preStop:
+          exec:
+            command: ["sh", "-c", "sleep 5"]  # Tempo para LB remover o pod
+  terminationGracePeriodSeconds: 30  # Tempo total para shutdown
+```
+
+### Sequência de Shutdown
+
+```
+1. Receber SIGTERM
+2. Parar de aceitar novas conexões (health check → NOT_SERVING)
+3. Aguardar drain period (5-10s) para LB remover o pod
+4. GracefulStop() — aguardar RPCs em andamento terminarem
+5. Se timeout (30s), forçar Stop()
+6. Fechar conexões com dependências (DB, cache)
+7. Exit
+```
+
+### Boas Práticas
+
+| Prática | Detalhes |
+|---------|---------|
+| **Sempre use GracefulStop** | Nunca use `Stop()` diretamente — mata RPCs em andamento |
+| **Drain period** | Aguarde 5-10s após sinalizar NOT_SERVING antes do GracefulStop |
+| **Timeout** | Defina um timeout máximo para GracefulStop (ex: 25s) |
+| **Health check update** | Marque como NOT_SERVING antes de parar |
+| **Close dependencies** | Feche conexões com DB/cache após stop do server |
+
+---
+
+## 18. gRPC Reflection
+
+### O que é?
+
+gRPC Reflection permite que clients descubram os serviços e métodos disponíveis em runtime, sem precisar dos arquivos `.proto`. Útil para debugging e ferramentas como `grpcurl` e `grpcui`.
+
+### Implementação (Go)
+
+```go
+import "google.golang.org/grpc/reflection"
+
+func main() {
+    server := grpc.NewServer()
+    pb.RegisterUserServiceServer(server, &UserServiceServer{})
+
+    // Habilitar reflection (apenas em dev/staging!)
+    reflection.Register(server)
+
+    server.Serve(lis)
+}
+```
+
+### Implementação (Java)
+
+```java
+import io.grpc.protobuf.services.ProtoReflectionService;
+
+Server server = ServerBuilder.forPort(50051)
+    .addService(new UserServiceImpl())
+    .addService(ProtoReflectionService.newInstance())  // Reflection
+    .build()
+    .start();
+```
+
+### Uso com grpcurl
+
+```bash
+# Listar serviços disponíveis
+grpcurl -plaintext localhost:50051 list
+
+# Descrever um serviço
+grpcurl -plaintext localhost:50051 describe company.platform.user.v1.UserService
+
+# Chamar um RPC
+grpcurl -plaintext -d '{"id": "123"}' localhost:50051 company.platform.user.v1.UserService/GetUser
+```
+
+### Segurança
+
+| Ambiente | Reflection |
+|----------|:-----------:|
+| Desenvolvimento | ✅ Habilitado |
+| Staging | ✅ Habilitado (com autenticação) |
+| Produção | ❌ Desabilitado (ou com acesso restrito) |
+
+> **Atenção**: Reflection em produção expõe toda a API surface. Se necessário, habilite apenas para IPs internos ou com autenticação.

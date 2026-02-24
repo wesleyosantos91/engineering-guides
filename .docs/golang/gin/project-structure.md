@@ -40,6 +40,7 @@
 - [Goroutines e Concorrência](#goroutines-e-concorrência)
 - [Observabilidade](#observabilidade)
 - [Docker](#docker)
+- [Bootstrap Completo (`cmd/api/main.go`)](#bootstrap-completo-cmdapimain-go)
 - [Guia para Criar Novo Recurso](#guia-para-criar-novo-recurso)
 - [Onde colocar este arquivo para o Copilot](#onde-colocar-este-arquivo-para-o-copilot)
 
@@ -216,6 +217,18 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
     return &UserHandler{svc: svc}
 }
 
+// Create godoc
+// @Summary      Criar usuário
+// @Description  Cria um novo usuário no sistema
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        input  body      model.CreateUserInput  true  "Dados do usuário"
+// @Success      201    {object}  model.UserOutput
+// @Failure      400    {object}  httperr.Problem
+// @Failure      409    {object}  httperr.Problem
+// @Failure      500    {object}  httperr.Problem
+// @Router       /v1/users [post]
 func (h *UserHandler) Create(c *gin.Context) {
     var input model.CreateUserInput
     if err := c.ShouldBindJSON(&input); err != nil {
@@ -232,6 +245,16 @@ func (h *UserHandler) Create(c *gin.Context) {
     c.JSON(http.StatusCreated, user.ToOutput())
 }
 
+// FindByID godoc
+// @Summary      Buscar usuário por ID
+// @Description  Retorna um usuário pelo UUID
+// @Tags         users
+// @Produce      json
+// @Param        id   path      string  true  "User UUID"
+// @Success      200  {object}  model.UserOutput
+// @Failure      400  {object}  httperr.Problem
+// @Failure      404  {object}  httperr.Problem
+// @Router       /v1/users/{id} [get]
 func (h *UserHandler) FindByID(c *gin.Context) {
     id, err := uuid.Parse(c.Param("id"))
     if err != nil {
@@ -247,7 +270,41 @@ func (h *UserHandler) FindByID(c *gin.Context) {
 
     c.JSON(http.StatusOK, user.ToOutput())
 }
+
+// FindAll godoc
+// @Summary      Listar usuários
+// @Description  Retorna lista paginada de usuários
+// @Tags         users
+// @Produce      json
+// @Param        page  query     int     false  "Page number (0-based)"  default(0)
+// @Param        size  query     int     false  "Page size"              default(20)
+// @Param        sort  query     string  false  "Sort field,direction"   example(name,asc)
+// @Success      200   {object}  pagination.Page[model.UserOutput]
+// @Router       /v1/users [get]
+func (h *UserHandler) FindAll(c *gin.Context) {
+    var params pagination.Params
+    if err := c.ShouldBindQuery(&params); err != nil {
+        _ = c.Error(err)
+        return
+    }
+    params.SetDefaults()
+
+    page, err := h.svc.FindAll(c.Request.Context(), params)
+    if err != nil {
+        _ = c.Error(err)
+        return
+    }
+    c.JSON(http.StatusOK, page)
+}
 ```
+
+> **Gerar docs:** Execute `swag init -g cmd/api/main.go -o docs` após adicionar/alterar anotações. Habilite o endpoint em modo debug:
+> ```go
+> // No router ou main — habilitar apenas em dev
+> if gin.Mode() == gin.DebugMode {
+>     engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+> }
+> ```
 
 > **Accept interfaces, return structs** (Uber Go Style Guide) — handlers recebem interfaces de service; services recebem interfaces de store.
 
@@ -455,6 +512,83 @@ func ToUserOutputList(users []User) []UserOutput {
 | `logger.go`     | Log estruturado de cada request (method, path, status) |
 | `ratelimit.go`  | Rate limiting por IP ou token                          |
 
+### Request ID Middleware
+
+```go
+// internal/middleware/requestid.go
+package middleware
+
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/google/uuid"
+)
+
+const RequestIDHeader = "X-Request-ID"
+
+func RequestID() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        requestID := c.GetHeader(RequestIDHeader)
+        if requestID == "" {
+            requestID = uuid.NewString()
+        }
+        c.Set("request_id", requestID)
+        c.Header(RequestIDHeader, requestID)
+        c.Next()
+    }
+}
+```
+
+### Rate Limit Middleware
+
+```go
+// internal/middleware/ratelimit.go
+package middleware
+
+import (
+    "net/http"
+    "sync"
+
+    "github.com/gin-gonic/gin"
+    "golang.org/x/time/rate"
+)
+
+// RateLimit aplica rate limiting por IP usando token bucket.
+func RateLimit(rps float64, burst int) gin.HandlerFunc {
+    type client struct {
+        limiter *rate.Limiter
+    }
+
+    var (
+        mu      sync.Mutex
+        clients = make(map[string]*client)
+    )
+
+    return func(c *gin.Context) {
+        ip := c.ClientIP()
+
+        mu.Lock()
+        cl, exists := clients[ip]
+        if !exists {
+            cl = &client{limiter: rate.NewLimiter(rate.Limit(rps), burst)}
+            clients[ip] = cl
+        }
+        mu.Unlock()
+
+        if !cl.limiter.Allow() {
+            c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+                "status": 429,
+                "title":  "Too Many Requests",
+                "detail": "Rate limit exceeded. Try again later.",
+            })
+            return
+        }
+        c.Next()
+    }
+}
+```
+
+> **Produção:** Para ambientes distribuídos (múltiplas instâncias), substitua o map in-memory por Redis (`go-redis/redis_rate`) para rate limiting global.
+
 ### platform — Infraestrutura Compartilhada
 
 | Subpacote          | Responsabilidade                                     |
@@ -620,20 +754,23 @@ internal/store/
 
 ### Anti-stuttering (Uber Go Style Guide)
 
-O nome do pacote é parte da chamada — não repita:
+O nome do pacote é parte da chamada — evite redundância desnecessária:
 
 ```go
-// ✅ Correto
-store.NewUser(db)       // pacote store, struct User
-model.User{}            // pacote model, struct User
-handler.NewUser(svc)    // pacote handler, struct User
+// ✅ Bom — nome do tipo não repete conceito do pacote
+model.User{}             // pacote model, struct User — sem "Model" no nome
+store.NewUserStore(db)   // aceitável: múltiplos stores (UserStore, OrderStore)
+handler.NewUserHandler() // aceitável: múltiplos handlers no mesmo pacote
 
-// ❌ Errado (stutter)
-store.NewUserStore(db)  // "store.UserStore" repete "store"
-model.UserModel{}       // "model.UserModel" repete "model"
+// ❌ Evitar — redundância pura sem valor
+model.UserModel{}        // "model.UserModel" repete "model"
+config.ConfigManager{}   // "config.ConfigManager" diz "config" duas vezes
+http.HTTPClient{}        // "http.HTTPClient" — use http.Client
 ```
 
-> **Exceção prática:** Quando há risco real de colisão de nomes ou quando o projeto é grande o suficiente para justificar clareza extra, o sufixo é aceitável. O importante é ser **consistente** no projeto inteiro.
+> **Regra prática:** Se o pacote contém **um único tipo principal**, evite o sufixo (`model.User`, não `model.UserModel`). Se contém **múltiplos tipos do mesmo domínio** (`store.UserStore`, `store.OrderStore`), o prefixo do recurso é necessário para distinguir. O importante é ser **consistente** no projeto inteiro.
+>
+> Todos os exemplos neste documento seguem esta abordagem pragmática: `UserStore`, `UserService`, `UserHandler` — o prefixo `User` diferencia de `OrderStore`, `OrderService`, etc.
 
 ### Error Wrapping (Go 1.13+)
 
@@ -767,6 +904,21 @@ func Load() (*Config, error) {
 
 > **Por que env vars e não YAML?** É o padrão 12-factor: env vars são o mecanismo mais portável e seguro para configuração em containers e CI/CD. Se precisar de YAML, use Viper.
 
+### Variáveis de Ambiente — Referência Rápida
+
+| Variável                 | Obrigatória | Default     | Descrição                            |
+|--------------------------|-------------|-------------|--------------------------------------|
+| `SERVER_PORT`            | Não         | `8080`      | Porta do servidor HTTP               |
+| `GIN_MODE`               | Não         | `release`   | Modo Gin (`debug`, `release`, `test`) |
+| `DATABASE_DSN`           | **Sim**     | —           | Connection string do banco           |
+| `DB_MAX_OPEN_CONNS`      | Não         | `25`        | Max conexões abertas                 |
+| `DB_MAX_IDLE_CONNS`      | Não         | `10`        | Max conexões idle                    |
+| `DB_CONN_MAX_LIFETIME`   | Não         | `5m`        | Tempo máximo de vida da conexão      |
+| `JWT_ISSUER_URI`         | **Sim**     | —           | URI do issuer JWT                    |
+| `JWK_SET_URI`            | **Sim**     | —           | URL do JWKS                          |
+| `CORS_ALLOWED_ORIGINS`   | Não         | `*`         | Origins permitidos (separados por `,`) |
+| `LOG_LEVEL`              | Não         | `info`      | Nível de log (`debug`, `info`, `warn`, `error`) |
+
 ### Environments
 
 | Environment  | `GIN_MODE` | Uso                                             |
@@ -849,7 +1001,7 @@ func TestUserService_Create(t *testing.T) {
         name    string
         input   model.CreateUserInput
         setup   func(s *mocks.UserStore)
-        wantErr error
+        wantErr interface{} // error sentinel, bool true (any error), ou nil
     }{
         {
             name:  "success",
@@ -866,7 +1018,7 @@ func TestUserService_Create(t *testing.T) {
             setup: func(s *mocks.UserStore) {
                 s.On("FindByEmail", mock.Anything, "alice@test.com").Return(&model.User{}, nil)
             },
-            wantErr: errs.ErrConflict,
+            wantErr: errs.ErrConflict, // NewConflict unwraps para ErrConflict
         },
         {
             name:  "store error",
@@ -875,7 +1027,7 @@ func TestUserService_Create(t *testing.T) {
                 s.On("FindByEmail", mock.Anything, "alice@test.com").Return(nil, errs.ErrNotFound)
                 s.On("Create", mock.Anything, mock.Anything).Return(errors.New("db error"))
             },
-            wantErr: cmpopts.AnyError,
+            wantErr: true, // qualquer erro
         },
     }
 
@@ -889,7 +1041,10 @@ func TestUserService_Create(t *testing.T) {
             _, err := svc.Create(context.Background(), tt.input)
 
             if tt.wantErr != nil {
-                require.ErrorIs(t, err, tt.wantErr)
+                require.Error(t, err)
+                if target, ok := tt.wantErr.(error); ok {
+                    require.ErrorIs(t, err, target)
+                }
             } else {
                 require.NoError(t, err)
             }
@@ -1295,6 +1450,18 @@ func NewBadRequest(msg string) *BadRequestError {
     return &BadRequestError{Message: msg}
 }
 
+type ConflictError struct {
+    Message string
+}
+
+func (e *ConflictError) Error() string { return e.Message }
+
+func (e *ConflictError) Unwrap() error { return ErrConflict }
+
+func NewConflict(msg string) *ConflictError {
+    return &ConflictError{Message: msg}
+}
+
 type BusinessError struct {
     Code    string
     Message string
@@ -1394,6 +1561,25 @@ func mapError(err error, instance string) httperr.Problem {
             Detail: "An unexpected error occurred", Instance: instance,
             Timestamp: time.Now().UTC().Format(time.RFC3339)}
     }
+}
+
+func formatValidation(errs validator.ValidationErrors) string {
+    msgs := make([]string, 0, len(errs))
+    for _, fe := range errs {
+        switch fe.Tag() {
+        case "required":
+            msgs = append(msgs, fmt.Sprintf("Field '%s' is required", fe.Field()))
+        case "email":
+            msgs = append(msgs, fmt.Sprintf("Field '%s' must be a valid email", fe.Field()))
+        case "min":
+            msgs = append(msgs, fmt.Sprintf("Field '%s' must be at least %s characters", fe.Field(), fe.Param()))
+        case "max":
+            msgs = append(msgs, fmt.Sprintf("Field '%s' must be at most %s characters", fe.Field(), fe.Param()))
+        default:
+            msgs = append(msgs, fmt.Sprintf("Field '%s' failed on '%s' validation", fe.Field(), fe.Tag()))
+        }
+    }
+    return strings.Join(msgs, "; ")
 }
 ```
 
@@ -1526,23 +1712,7 @@ func NewPage[T any](items []T, params Params, total int64) *Page[T] {
 
 ### Uso no Handler
 
-```go
-func (h *UserHandler) FindAll(c *gin.Context) {
-    var params pagination.Params
-    if err := c.ShouldBindQuery(&params); err != nil {
-        _ = c.Error(err)
-        return
-    }
-    params.SetDefaults()
-
-    page, err := h.svc.FindAll(c.Request.Context(), params)
-    if err != nil {
-        _ = c.Error(err)
-        return
-    }
-    c.JSON(http.StatusOK, page)
-}
-```
+Veja o exemplo completo do `FindAll` com Swagger annotations na seção [handler — HTTP Handlers](#handler--http-handlers).
 
 ---
 
@@ -1697,46 +1867,24 @@ func (s *ReportService) GenerateAll(ctx context.Context, ids []uuid.UUID) ([]mod
 
 ### Graceful Shutdown
 
+Veja a seção [Bootstrap Completo](#bootstrap-completo-cmdapimain-go) para o exemplo completo.
+
+**Resumo do padrão:**
+1. Servidor HTTP roda em goroutine separada
+2. `signal.Notify` captura SIGINT/SIGTERM no main
+3. `srv.Shutdown(ctx)` drena conexões em andamento com timeout
+4. Fecha recursos (DB, messaging, tracer) antes de encerrar
+
 ```go
-func main() {
-    cfg := mustLoadConfig()
-    log := mustInitLogger(cfg.Log)
-    defer log.Sync()
+quit := make(chan os.Signal, 1)
+signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+<-quit
 
-    engine := gin.New()
-    // ... setup middlewares e rotas ...
-
-    srv := &http.Server{
-        Addr:         ":" + cfg.Server.Port,
-        Handler:      engine,
-        ReadTimeout:  10 * time.Second,
-        WriteTimeout: 30 * time.Second,
-        IdleTimeout:  60 * time.Second,
-    }
-
-    // Start server
-    go func() {
-        log.Info("server starting", zap.String("port", cfg.Server.Port))
-        if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-            log.Fatal("server error", zap.Error(err))
-        }
-    }()
-
-    // Wait for interrupt
-    quit := make(chan os.Signal, 1)
-    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-    sig := <-quit
-    log.Info("received signal, shutting down", zap.String("signal", sig.String()))
-
-    // Graceful shutdown with timeout
-    ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-    defer cancel()
-
-    if err := srv.Shutdown(ctx); err != nil {
-        log.Error("server forced to shutdown", zap.Error(err))
-    }
-    log.Info("server stopped")
-}
+ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+defer cancel()
+srv.Shutdown(ctx)  // drena requests em andamento
+sqlDB.Close()      // fecha pool de conexões
+tp.Shutdown(ctx)   // flush de traces pendentes
 ```
 
 ### Cuidados (Uber Go Style Guide)
@@ -1756,7 +1904,7 @@ func main() {
 |--------------|---------------------------------|-----------------------------------------------------------------|
 | **Métricas** | Prometheus client_golang        | `/metrics`, histogramas por rota, contadores de erro            |
 | **Tracing**  | OpenTelemetry                   | Propagação W3C TraceContext, exporter OTLP                      |
-| **Logging**  | Zap (uber-go/zap)               | JSON estruturado, nível por env, `trace_id` e `request_id`     |
+| **Logging**  | Zap (uber-go/zap) ou slog       | JSON estruturado, nível por env, `trace_id` e `request_id`     |
 | **Health**   | Endpoints customizados          | `/health/live`, `/health/ready` (com check de DB)               |
 | **API Docs** | swaggo/swag + gin-swagger       | `/swagger/*` (habilitado apenas em GIN_MODE=debug)              |
 
@@ -1810,12 +1958,7 @@ func Metrics() gin.HandlerFunc {
 func Logger(log *zap.Logger) gin.HandlerFunc {
     return func(c *gin.Context) {
         start := time.Now()
-        requestID := c.GetHeader("X-Request-ID")
-        if requestID == "" {
-            requestID = uuid.NewString()
-        }
-        c.Set("request_id", requestID)
-        c.Header("X-Request-ID", requestID)
+        requestID := c.GetString("request_id") // setado pelo RequestID middleware
 
         c.Next()
 
@@ -1830,6 +1973,79 @@ func Logger(log *zap.Logger) gin.HandlerFunc {
     }
 }
 ```
+
+> **Alternativa stdlib (Go 1.21+): `log/slog`** — Para projetos que preferem zero dependências externas de logging:
+> ```go
+> func Logger() gin.HandlerFunc {
+>     return func(c *gin.Context) {
+>         start := time.Now()
+>         c.Next()
+>         slog.Info("request",
+>             "method", c.Request.Method,
+>             "path", c.Request.URL.Path,
+>             "status", c.Writer.Status(),
+>             "latency", time.Since(start),
+>             "request_id", c.GetString("request_id"),
+>         )
+>     }
+> }
+> ```
+
+### OpenTelemetry Tracing
+
+```go
+// internal/platform/observe/tracing.go
+package observe
+
+import (
+    "context"
+    "fmt"
+
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+    "go.opentelemetry.io/otel/propagation"
+    "go.opentelemetry.io/otel/sdk/resource"
+    sdktrace "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+)
+
+func InitTracer(ctx context.Context, serviceName, otlpEndpoint string) (*sdktrace.TracerProvider, error) {
+    exporter, err := otlptracegrpc.New(ctx,
+        otlptracegrpc.WithEndpoint(otlpEndpoint),
+        otlptracegrpc.WithInsecure(),
+    )
+    if err != nil {
+        return nil, fmt.Errorf("creating OTLP exporter: %w", err)
+    }
+
+    tp := sdktrace.NewTracerProvider(
+        sdktrace.WithBatcher(exporter),
+        sdktrace.WithResource(resource.NewWithAttributes(
+            semconv.SchemaURL,
+            semconv.ServiceNameKey.String(serviceName),
+        )),
+    )
+
+    otel.SetTracerProvider(tp)
+    otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+        propagation.TraceContext{},
+        propagation.Baggage{},
+    ))
+
+    return tp, nil
+}
+```
+
+```go
+// Uso no main.go:
+tp, err := observe.InitTracer(ctx, "myapp-api", cfg.Tracing.OTLPEndpoint)
+if err != nil {
+    log.Fatal("tracer init failed", zap.Error(err))
+}
+defer tp.Shutdown(ctx)
+```
+
+> **Gin + OTEL:** Use `go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin` como middleware para tracing automático de requests HTTP.
 
 ---
 
@@ -1901,6 +2117,163 @@ docker-compose up -d mysql
 migrate -path migrations -database "mysql://root:root@tcp(localhost:3306)/app" up
 GIN_MODE=debug go run ./cmd/api
 ```
+
+---
+
+## Bootstrap Completo (`cmd/api/main.go`)
+
+Exemplo completo de entrypoint com DI manual, graceful shutdown e cleanup de recursos:
+
+```go
+// cmd/api/main.go
+package main
+
+import (
+    "context"
+    "errors"
+    "fmt"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "github.com/gin-gonic/gin"
+    "github.com/prometheus/client_golang/prometheus/promhttp"
+    "go.uber.org/zap"
+
+    "myapp/internal/config"
+    "myapp/internal/handler"
+    "myapp/internal/middleware"
+    "myapp/internal/platform/database"
+    "myapp/internal/platform/observe"
+    "myapp/internal/router"
+    "myapp/internal/service"
+    "myapp/internal/store"
+)
+
+func main() {
+    // ── Config ──
+    cfg, err := config.Load()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "failed to load config: %v\n", err)
+        os.Exit(1)
+    }
+
+    // ── Logger ──
+    log := mustInitLogger(cfg.Log)
+    defer log.Sync()
+
+    // ── Database ──
+    db, err := database.NewDB(cfg.Database)
+    if err != nil {
+        log.Fatal("database connection failed", zap.Error(err))
+    }
+    sqlDB, _ := db.DB()
+    defer sqlDB.Close()
+
+    // ── Migrations ──
+    if err := database.RunMigrations(cfg.Database.DSN); err != nil {
+        log.Fatal("migrations failed", zap.Error(err))
+    }
+
+    // ── Stores ──
+    userStore := store.NewUserStore(db)
+    orderStore := store.NewOrderStore(db)
+
+    // ── Services ──
+    userSvc := service.NewUserService(userStore, log)
+    orderSvc := service.NewOrderService(orderStore, userStore, log)
+
+    // ── Handlers ──
+    userHandler := handler.NewUserHandler(userSvc)
+    orderHandler := handler.NewOrderHandler(orderSvc)
+
+    // ── Gin Engine ──
+    if cfg.Server.Mode == "release" {
+        gin.SetMode(gin.ReleaseMode)
+    }
+
+    engine := gin.New()
+
+    // ── Global Middlewares ──
+    engine.Use(
+        middleware.RequestID(),
+        middleware.Logger(log),
+        middleware.CORS(cfg.CORS.AllowedOrigins),
+        middleware.Recovery(log),
+        observe.Metrics(),
+    )
+
+    // ── Health + Metrics ──
+    observe.RegisterHealthRoutes(engine, db)
+    engine.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+    // ── Routes ──
+    router.Setup(engine, cfg, userHandler, orderHandler)
+
+    // ── HTTP Server ──
+    srv := &http.Server{
+        Addr:         ":" + cfg.Server.Port,
+        Handler:      engine,
+        ReadTimeout:  10 * time.Second,
+        WriteTimeout: 30 * time.Second,
+        IdleTimeout:  60 * time.Second,
+    }
+
+    // ── Start ──
+    go func() {
+        log.Info("server starting", zap.String("port", cfg.Server.Port))
+        if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+            log.Fatal("server error", zap.Error(err))
+        }
+    }()
+
+    // ── Graceful Shutdown ──
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    sig := <-quit
+    log.Info("received signal, shutting down", zap.String("signal", sig.String()))
+
+    ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+    defer cancel()
+
+    // 1. Parar de aceitar novas requests
+    if err := srv.Shutdown(ctx); err != nil {
+        log.Error("server forced to shutdown", zap.Error(err))
+    }
+
+    // 2. Fechar conexões (DB, messaging, etc.)
+    if err := sqlDB.Close(); err != nil {
+        log.Error("database close error", zap.Error(err))
+    }
+
+    log.Info("server stopped gracefully")
+}
+
+func mustInitLogger(cfg config.Log) *zap.Logger {
+    var logCfg zap.Config
+    if cfg.Level == "debug" {
+        logCfg = zap.NewDevelopmentConfig()
+    } else {
+        logCfg = zap.NewProductionConfig()
+    }
+
+    level, err := zap.ParseAtomicLevel(cfg.Level)
+    if err == nil {
+        logCfg.Level = level
+    }
+
+    log, err := logCfg.Build()
+    if err != nil {
+        panic(fmt.Sprintf("failed to init logger: %v", err))
+    }
+    zap.ReplaceGlobals(log)
+    return log
+}
+```
+
+> **DI manual vs uber-go/fx:** Para projetos com até ~20 dependências, constructor injection manual (como acima) é mais simples e explícito. Para projetos maiores, use `uber-go/fx` para autowiring e lifecycle management.
 
 ---
 

@@ -99,6 +99,24 @@ O Strategy permite que o algoritmo varie independentemente dos clientes que o ut
 - Mais classes para algoritmos simples.
 - Pode ser substituído por funções de primeira classe (lambdas) em linguagens funcionais.
 
+### Sinais no código (quando considerar Strategy)
+
+- Blocos `if/else` ou `switch/case` que selecionam algoritmos.
+- Código que muda frequentemente para adicionar novas variantes de um comportamento.
+- Classes com múltiplos métodos que diferem apenas no algoritmo interno.
+- Necessidade de trocar algoritmo em runtime (ex: estratégia de preço por perfil de cliente).
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Novas strategies podem ser adicionadas sem alterar Context |
+| **SRP** | Cada strategy encapsula um único algoritmo |
+| **DIP** | Context depende da interface Strategy, não de implementações concretas |
+| **LSP** | Todas as strategies são substituíveis via interface |
+
+> **Veja também:** [State](#state) (similar em estrutura), [Template Method](#template-method) (alternativa via herança), [Factory Method](creational-patterns.md#factory-method) (para criar a Strategy adequada), [OCP em SOLID](solid-principles.md#o--openclosed-principle-ocp)
+
 ---
 
 ## Observer
@@ -159,6 +177,24 @@ muda de estado, todos os seus dependentes são **notificados e atualizados** aut
 - **Ordem de notificação:** geralmente não é garantida.
 - **Cascata:** um observer pode provocar notificações em cadeia (tempestade de eventos).
 - **Debugging:** rastrear fluxo de eventos pode ser complexo.
+
+### Sinais no código (quando considerar Observer)
+
+- Polling (verificação periódica) para detectar mudanças de estado.
+- Acoplamento direto entre quem produz dados e quem consume (múltiplas dependências diretas).
+- Código que notifica manualmente cada consumidor um a um.
+- Necessidade de adicionar novos "ouvintes" sem alterar o emissor.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Novos observers podem ser adicionados sem alterar o Subject |
+| **SRP** | Subject se preocupa com notificação; Observer com reação |
+| **DIP** | Subject depende da interface Observer, não de implementações concretas |
+| **ISP** | Interface Observer é minimalista (apenas `update()`) |
+
+> **Veja também:** [Mediator](#mediator) (centraliza comunicação), [Event-Driven Architecture](architectural-patterns.md#event-driven-architecture), [Command](#command)
 
 ---
 
@@ -223,6 +259,23 @@ com diferentes requisições, enfileirar, registrar log e suportar **undo/redo**
 - Aumenta o número de classes (um Command por operação).
 - Para operações simples, pode ser over-engineering.
 - Undo complexo pode requerer armazenar muito estado.
+
+### Sinais no código (quando considerar Command)
+
+- Lógica de execução misturada com lógica de UI ou controle.
+- Necessidade de undo/redo e não há mecanismo estruturado.
+- Operações que precisam ser enfileiradas, agendadas ou logadas.
+- Muitos callbacks anônimos com lógica complexa.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **SRP** | Cada Command encapsula uma única ação |
+| **OCP** | Novos commands adicionados sem alterar Invoker ou Receiver |
+| **DIP** | Invoker depende da interface Command, não de implementações |
+
+> **Veja também:** [Memento](#memento) (para armazenar estado de undo), [Strategy](#strategy), [CQRS](architectural-patterns.md#cqrs--command-query-responsibility-segregation)
 
 ---
 
@@ -291,6 +344,22 @@ para subclasses. Permite que subclasses redefinam certos passos sem alterar a es
 - Quanto mais passos, mais complexo o contrato entre base e subclasses.
 - Prefira Strategy quando composição for viável.
 
+### Sinais no código (quando considerar Template Method)
+
+- Múltiplas classes com algoritmo idêntico na estrutura, diferindo apenas em etapas específicas.
+- Duplicação de código onde apenas partes internas do algoritmo variam.
+- Necessidade de forçar uma sequência de passos (framework/hook).
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Pontos de extensão (hooks e métodos abstratos) permitem variação sem modificar o esqueleto |
+| **DIP** | O framework (classe base) chama código do usuário (subclasse) — Hollywood Principle |
+| **LSP** | Subclasses devem respeitar o contrato do template method |
+
+> **Veja também:** [Strategy](#strategy) (alternativa via composição), [Factory Method](creational-patterns.md#factory-method) (frequentemente usado junto), [Composição sobre Herança](best-practices.md#composição-sobre-herança)
+
 ---
 
 ## State
@@ -358,6 +427,23 @@ O objeto parecerá ter mudado de classe.
 - Pode ser over-engineering para máquinas com poucos estados.
 - Número de classes aumenta proporcionalmente aos estados.
 - Transições complexas podem ser difíceis de rastrear.
+
+### Sinais no código (quando considerar State)
+
+- Múltiplos `if (state == X)` ou `switch(state)` espalhados por vários métodos.
+- Cada novo estado requer modificação em vários pontos do código.
+- Lógica de transição de estado misturada com lógica de negócio.
+- Flags booleanas controlando comportamento (`isActive`, `isPaused`, `isReady`).
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Novos estados = novas classes, sem alterar o Context |
+| **SRP** | Cada ConcreteState encapsula lógica de um único estado |
+| **LSP** | Todos os states são substituíveis via interface State |
+
+> **Veja também:** [Strategy](#strategy) (similar em estrutura), [Singleton](creational-patterns.md#singleton) (states compartilhados como singletons)
 
 ---
 
@@ -434,6 +520,23 @@ Client ──▶ Handler A ──▶ Handler B ──▶ Handler C ──▶ (fi
 - Debugging pode ser complexo em cadeias longas.
 - Performance: cada handler adiciona overhead.
 
+### Sinais no código (quando considerar Chain of Responsibility)
+
+- Cadeias de `if/else if/else if` para determinar quem processa uma requisição.
+- Lógica de middleware duplicada ou espalhada.
+- Necessidade de configurar dinamicamente quem processa o quê.
+- Vários filtros/validações aplicados em sequência.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Novos handlers adicionados sem alterar handlers existentes |
+| **SRP** | Cada handler se responsabiliza por um único tipo de processamento |
+| **DIP** | Handlers dependem da interface Handler, não de concretos |
+
+> **Veja também:** [Decorator](structural-patterns.md#decorator) (similar em encadeamento), [Composite](structural-patterns.md#composite), [Command](#command)
+
 ---
 
 ## Mediator
@@ -502,6 +605,23 @@ Promove acoplamento fraco ao evitar que objetos se refiram uns aos outros direta
 - Centralização pode ser um ponto único de falha.
 - Para poucos participantes, pode ser desnecessário.
 
+### Sinais no código (quando considerar Mediator)
+
+- Muitas classes com referências cruzadas (A conhece B, B conhece C, C conhece A).
+- Adicionar um novo participante requer alterar vários existentes.
+- Teia de dependências bidirecionais entre componentes.
+- Lógica de coordenação espalhada entre os participantes.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **SRP** | Centraliza lógica de coordenação em um único lugar |
+| **OCP** | Novos colleagues podem ser adicionados sem alterar os existentes |
+| **DIP** | Colleagues dependem da interface Mediator, não uns dos outros |
+
+> **Veja também:** [Observer](#observer) (alternativa descentralizada), [Facade](structural-patterns.md#facade) (simplificação unidirecional)
+
 ---
 
 ## Iterator
@@ -561,6 +681,16 @@ O padrão Iterator é mais relevante quando se implementa coleções customizada
 - Em linguagens modernas, raramente precisa ser implementado manualmente.
 - Iteradores externos dão mais controle; iteradores internos são mais simples.
 
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **SRP** | Separa a lógica de travessia da lógica da coleção |
+| **OCP** | Novas formas de iteração sem alterar a coleção |
+| **ISP** | Interface Iterator é minimalista (`hasNext`, `next`) |
+
+> **Veja também:** [Composite](structural-patterns.md#composite) (iteração sobre árvores), [Visitor](#visitor)
+
 ---
 
 ## Memento
@@ -606,6 +736,21 @@ de modo que o objeto possa ser **restaurado** a esse estado posteriormente.
 - Pode consumir muita memória se mementos forem grandes ou frequentes.
 - O Caretaker precisa gerenciar o ciclo de vida dos mementos (quando descartar).
 - Considere armazenar apenas **deltas** em vez de snapshots completos.
+
+### Sinais no código (quando considerar Memento)
+
+- Necessidade de undo/redo sem mecanismo estruturado.
+- Estado do objeto sendo salvo/restaurado manualmente em vários pontos.
+- Lógica de checkpoint/snapshot ad-hoc.
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **SRP** | Originator cuida do negócio; Memento cuida do snapshot; Caretaker cuida do histórico |
+| **Encapsulamento** | Memento preserva encapsulamento do Originator — Caretaker não acessa internals |
+
+> **Veja também:** [Command](#command) (frequentemente usado junto para undo), [Event Sourcing](architectural-patterns.md#event-sourcing) (alternativa arquitetural para histórico)
 
 ---
 
@@ -669,6 +814,22 @@ ElemA.accept(v) → v.visitA(this)   (double dispatch)
 - **Violação de encapsulamento:** Visitor pode precisar acessar detalhes internos dos elementos.
 - **Double dispatch:** necessário porque a maioria das linguagens tem single dispatch.
 - **Complexidade:** para estruturas simples, polimorfismo direto pode ser suficiente.
+
+### Sinais no código (quando considerar Visitor)
+
+- Vários `instanceof`/`type switch` para executar operações diferentes por tipo de elemento.
+- Novas operações sobre uma hierarquia de classes são adicionadas frequentemente.
+- Operações não-relacionadas acumulando-se nas classes de elemento (violando SRP).
+
+### Relação com SOLID
+
+| Princípio | Relação |
+|-----------|--------|
+| **OCP** | Novas operações (visitors) sem alterar os elementos |
+| **SRP** | Cada visitor encapsula uma operação específica; elementos não acumulam lógica |
+| **Conflito com OCP** | Adicionar novos tipos de elementos requer alterar todos os visitors |
+
+> **Veja também:** [Composite](structural-patterns.md#composite) (Visitor é frequentemente usado sobre árvores Composite), [Iterator](#iterator), [Strategy](#strategy)
 
 ---
 
