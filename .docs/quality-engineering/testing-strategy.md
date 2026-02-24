@@ -1,9 +1,10 @@
-# Estratégia de Testes e Qualidade — [NOME DO SISTEMA]
+# Estratégia de Testes e Qualidade de Software
 
-> **Versão:** 1.0
-> **Última atualização:** 2026-02-23
-> **Público-alvo:** Times de engenharia (back-end, front-end, plataforma, QA)
+> **Versão:** 2.0
+> **Última atualização:** 2026-02-24
+> **Público-alvo:** Times de engenharia (back-end, front-end, plataforma, QA, SRE)
 > **Classificação:** Documento normativo — decisões aqui são obrigatórias para novos componentes e fortemente recomendadas para legado.
+> **Documentos relacionados:** [Performance Testing](performance-testing.md) · [Security Testing](security-testing.md) · [Test Automation Patterns](test-automation-patterns.md) · [Code Review & Quality](code-review-quality.md) · [Observability & Quality](observability-quality.md)
 
 ---
 
@@ -14,11 +15,16 @@
 3. [Padrão de Escrita: Cenário → Ação → Resultado](#3-padrão-de-escrita-cenário--ação--resultado)
 4. [Estratégia por Camada/Componente](#4-estratégia-por-camadacomponente)
 5. [Estratégia para Assíncrono e Resiliência](#5-estratégia-para-assíncrono-e-resiliência)
-6. [Dados de Teste e Ambientes](#6-dados-de-teste-e-ambientes)
-7. [CI/CD e Gates de Qualidade](#7-cicd-e-gates-de-qualidade)
-8. [Métricas e Observabilidade de Testes](#8-métricas-e-observabilidade-de-testes)
-9. [Definition of Done (DoD) e Checklists](#9-definition-of-done-dod-e-checklists)
-10. [Glossário](#10-glossário)
+6. [Test Doubles — Quando Usar Cada Tipo](#6-test-doubles--quando-usar-cada-tipo)
+7. [Estratégias Avançadas de Teste](#7-estratégias-avançadas-de-teste)
+8. [Testes para Front-end](#8-testes-para-front-end)
+9. [Testes em Arquitetura de Microsserviços](#9-testes-em-arquitetura-de-microsserviços)
+10. [Dados de Teste e Ambientes](#10-dados-de-teste-e-ambientes)
+11. [CI/CD e Gates de Qualidade](#11-cicd-e-gates-de-qualidade)
+12. [Métricas e Observabilidade de Testes](#12-métricas-e-observabilidade-de-testes)
+13. [Ferramentas e Frameworks Recomendados](#13-ferramentas-e-frameworks-recomendados)
+14. [Definition of Done (DoD) e Checklists](#14-definition-of-done-dod-e-checklists)
+15. [Glossário](#15-glossário)
 
 ---
 
@@ -35,12 +41,37 @@
 
 ### 1.2 Não-escopo (o que este documento **não** cobre)
 
-- Testes de performance/carga (documento dedicado: `[LINK_DOC_PERFORMANCE]`).
-- Testes de segurança/penetração (documento dedicado: `[LINK_DOC_SECURITY]`).
+- Testes de performance/carga (ver [Performance Testing](performance-testing.md)).
+- Testes de segurança/penetração (ver [Security Testing](security-testing.md)).
+- Padrões avançados de automação e receitas (ver [Test Automation Patterns](test-automation-patterns.md)).
 - Detalhes de configuração de ferramentas específicas (cada time define suas ferramentas).
 - Testes exploratórios manuais (cobertos no processo de QA do time).
 
-### 1.3 Princípios Fundamentais
+### 1.3 Shift-Left Testing
+
+> **Conceito:** Mover atividades de qualidade para as fases mais iniciais do ciclo de desenvolvimento.
+
+Em vez de tratar qualidade como uma fase posterior ao desenvolvimento, ela deve ser integrada **desde o design**:
+
+```
+Tradicional:  Design → Código → Testes → Deploy → Monitoramento
+                                  ^^^^^
+                            Qualidade aqui
+
+Shift-Left:   Design → Código → Testes → Deploy → Monitoramento
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        Qualidade em TODAS as fases
+```
+
+| Fase           | Atividade de Qualidade                                                        |
+|----------------|-------------------------------------------------------------------------------|
+| **Design**     | Revisão de contratos, definição de critérios de aceitação, threat modeling      |
+| **Código**     | TDD/BDD, pair programming, análise estática, pré-commit hooks                  |
+| **Build**      | Testes unitários, integração, contrato, SAST, cobertura                        |
+| **Deploy**     | Smoke tests, canary analysis, feature flags                                   |
+| **Produção**   | Observabilidade, alertas, chaos engineering, synthetic monitoring              |
+
+### 1.4 Princípios Fundamentais
 
 | #  | Princípio                    | Descrição                                                                                                         |
 |----|------------------------------|--------------------------------------------------------------------------------------------------------------------|
@@ -469,9 +500,426 @@ verificar(resultado)
 
 ---
 
-## 6. Dados de Teste e Ambientes
+## 6. Test Doubles — Quando Usar Cada Tipo
 
-### 6.1 Estratégia de Test Data
+### 6.1 Taxonomia de Test Doubles
+
+| Tipo      | Definição                                                                                      | Quando usar                                         |
+|-----------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------|
+| **Dummy** | Objeto passado como parâmetro mas nunca usado. Apenas preenche a assinatura.                  | Parâmetros obrigatórios que não afetam o teste       |
+| **Stub**  | Retorna respostas pré-definidas. Não verifica interações.                                     | Isolar dependência fornecendo dados controlados      |
+| **Spy**   | Registra chamadas recebidas para verificação posterior. Pode delegar ao objeto real.           | Verificar que uma interação ocorreu (ex.: evento publicado) |
+| **Mock**  | Objeto com expectativas pré-programadas. Verifica interações automaticamente.                 | Validar orquestração e ordem de chamadas             |
+| **Fake**  | Implementação funcional simplificada (ex.: banco in-memory, fila local).                      | Testes de integração leves, sem infra externa        |
+
+### 6.2 Regras de Uso
+
+| Regra | Descrição                                                                                          |
+|-------|----------------------------------------------------------------------------------------------------|
+| TD1   | **Prefira Stubs a Mocks.** Stubs tornam o teste menos acoplado à implementação.                    |
+| TD2   | **Use Fakes para integração leve.** Um `FakeRepository` in-memory é mais legível que um mock complexo. |
+| TD3   | **Mocks apenas para verificar interações críticas.** Ex.: "evento FOI publicado", não "método X foi chamado". |
+| TD4   | **Nunca mock de Value Objects.** Se é simples criar o real, use o real.                            |
+| TD5   | **Mock no limite arquitetural.** Mock em portas/interfaces, nunca em classes concretas internas.   |
+| TD6   | **Se o mock é complexo demais, redesenhe o código.** Mock complicado = design smell.               |
+
+### 6.3 Exemplos Comparativos
+
+#### Stub (Java — JUnit + Mockito)
+
+```java
+// Stub: controla o retorno, não verifica interação
+@Test
+void calcularFrete_cepValido_retornaValorCalculado() {
+    // Arrange
+    var tabelaFrete = mock(TabelaFretePort.class);
+    when(tabelaFrete.buscarPorCep("01310-100")).thenReturn(new Frete(15.90));
+    var calculadora = new CalculadoraFrete(tabelaFrete);
+
+    // Act
+    var resultado = calculadora.calcular("01310-100", 2.5);
+
+    // Assert
+    assertThat(resultado.getValor()).isEqualByComparingTo("39.75");
+}
+```
+
+#### Mock com verificação (Java — JUnit + Mockito)
+
+```java
+// Mock: verifica que a interação ocorreu
+@Test
+void criarPedido_sucesso_publicaEventoPedidoCriado() {
+    // Arrange
+    var eventPublisher = mock(EventPublisherPort.class);
+    var repository = mock(PedidoRepository.class);
+    var useCase = new CriarPedidoUseCase(repository, eventPublisher);
+    var comando = new CriarPedidoCommand("cli-123", List.of(item("SKU-1", 2)));
+
+    // Act
+    useCase.executar(comando);
+
+    // Assert — verifica que o evento foi publicado com dados corretos
+    verify(eventPublisher).publish(argThat(event ->
+        event.getClienteId().equals("cli-123") &&
+        event.getType().equals("PEDIDO_CRIADO")
+    ));
+}
+```
+
+#### Fake (Go)
+
+```go
+// Fake: implementação funcional simplificada
+type FakeOrderRepository struct {
+    orders map[string]*Order
+}
+
+func NewFakeOrderRepository() *FakeOrderRepository {
+    return &FakeOrderRepository{orders: make(map[string]*Order)}
+}
+
+func (r *FakeOrderRepository) Save(ctx context.Context, order *Order) error {
+    r.orders[order.ID] = order
+    return nil
+}
+
+func (r *FakeOrderRepository) FindByID(ctx context.Context, id string) (*Order, error) {
+    order, ok := r.orders[id]
+    if !ok {
+        return nil, ErrNotFound
+    }
+    return order, nil
+}
+
+func TestCreateOrder_ValidData_PersistsCorrectly(t *testing.T) {
+    repo := NewFakeOrderRepository()
+    svc := NewOrderService(repo)
+
+    order, err := svc.Create(ctx, CreateOrderInput{CustomerID: "cust-1"})
+
+    require.NoError(t, err)
+    saved, _ := repo.FindByID(ctx, order.ID)
+    assert.Equal(t, "cust-1", saved.CustomerID)
+    assert.Equal(t, StatusPending, saved.Status)
+}
+```
+
+### 6.4 Anti-Patterns com Test Doubles
+
+| Anti-pattern                              | Sintoma                                           | Solução                                                  |
+|-------------------------------------------|---------------------------------------------------|----------------------------------------------------------|
+| Mock retorna mock que retorna mock        | Teste ilegível, 10+ linhas de setup de mocks     | Redesenhar o código — Law of Demeter violada             |
+| Verificar ordem exata de chamadas         | Teste quebra ao reordenar código que não muda resultado | Verificar resultado final, não sequência interna     |
+| Mock de classe concreta interna           | Acoplado à implementação, não ao comportamento    | Extrair interface/port e mock na fronteira               |
+| Stub que replica lógica real              | Duplica comportamento, diverge com o tempo        | Usar Fake com implementação simplificada testada         |
+| Não verificar argumentos do mock          | Teste passa mesmo com dados errados               | Usar `argThat()`, `ArgumentCaptor` ou equivalente        |
+
+---
+
+## 7. Estratégias Avançadas de Teste
+
+### 7.1 Property-Based Testing (PBT)
+
+> **Conceito:** Em vez de testar com valores específicos (exemplos), definir **propriedades** que devem ser verdadeiras para **qualquer** input válido. O framework gera centenas de inputs aleatórios automaticamente.
+
+| Aspecto            | Detalhe                                                                            |
+|--------------------|------------------------------------------------------------------------------------|
+| **Quando usar**    | Funções puras, serialização/deserialização, parsers, codecs, algoritmos            |
+| **Quando evitar**  | Lógica com muitas dependências externas, código com poucos inputs possíveis        |
+| **Benefício**      | Encontra edge cases que humanos jamais pensariam em testar                          |
+| **Frameworks**     | jqwik (Java), fast-check (JS/TS), Hypothesis (Python), gopter (Go)                |
+
+**Exemplo — Java com jqwik:**
+
+```java
+@Property
+void serializarEDeserializar_qualquerPedido_mantemDadosIntactos(
+    @ForAll @StringLength(min = 1, max = 50) String clienteId,
+    @ForAll @Positive BigDecimal valor
+) {
+    var pedido = new Pedido(clienteId, valor);
+
+    // Propriedade: serialize → deserialize deve retornar objeto equivalente
+    var json = serializer.toJson(pedido);
+    var restaurado = serializer.fromJson(json, Pedido.class);
+
+    assertThat(restaurado).isEqualTo(pedido);
+}
+```
+
+**Exemplo — TypeScript com fast-check:**
+
+```typescript
+import fc from 'fast-check';
+
+test('sort é idempotente — ordenar duas vezes dá o mesmo resultado', () => {
+  fc.assert(
+    fc.property(fc.array(fc.integer()), (arr) => {
+      const sorted1 = [...arr].sort((a, b) => a - b);
+      const sorted2 = [...sorted1].sort((a, b) => a - b);
+      expect(sorted1).toEqual(sorted2);
+    })
+  );
+});
+```
+
+### 7.2 Snapshot Testing
+
+> **Conceito:** Capturar a saída de um componente/função e salvar como "snapshot". Em execuções futuras, comparar a saída atual com o snapshot salvo. Qualquer diferença falha o teste.
+
+| Aspecto            | Detalhe                                                                            |
+|--------------------|------------------------------------------------------------------------------------|
+| **Quando usar**    | Componentes UI, respostas de API, schemas, HTML/JSON gerado                        |
+| **Quando evitar**  | Dados que mudam frequentemente (timestamps, IDs aleatórios)                         |
+| **Cuidado**        | Snapshots devem ser revisados no PR — "aprovar cegamente" anula o valor             |
+| **Frameworks**     | Jest (JS/TS), approval tests (Java/C#), snapshot crates (Rust)                     |
+
+```typescript
+// Jest snapshot — componente React
+test('renderiza corretamente o card de produto', () => {
+  const tree = renderer.create(
+    <ProductCard name="Notebook" price={2999.90} inStock={true} />
+  ).toJSON();
+
+  expect(tree).toMatchSnapshot();
+});
+```
+
+**Regras para snapshots:**
+- Snapshot novo ou alterado DEVE ser revisado manualmente no PR
+- Excluir campos dinâmicos (timestamps, UUIDs) via serializers customizados
+- Manter snapshots pequenos e focados — evitar snapshots de páginas inteiras
+
+### 7.3 Mutation Testing
+
+> **Conceito:** Introduzir pequenas modificações (mutantes) no código-fonte e verificar se os testes detectam. Se um mutante sobrevive, significa que os testes não validam aquele comportamento.
+
+| Mutante típico                  | Exemplo                                        | O que revela se sobrevive             |
+|--------------------------------|------------------------------------------------|---------------------------------------|
+| Troca operador relacional      | `>` → `>=`                                     | Assert não valida valor limite         |
+| Remove chamada void            | Remove `eventPublisher.publish(...)`           | Efeito colateral não verificado       |
+| Troca retorno por constante    | `return calculado` → `return 0`                | Assert genérico (ex.: `assertNotNull`) |
+| Nega condição                  | `if (valid)` → `if (!valid)`                   | Caminho de erro não testado           |
+| Remove exceção                 | Remove `throw new ...`                          | Cenário de erro não testado           |
+
+**Ferramentas:** PITest (Java), Stryker (JS/TS/C#), mutmut (Python), go-mutesting (Go)
+
+**Meta recomendada:** ≥ 60% mutation score em código de domínio/negócio.
+
+### 7.4 Chaos Engineering (Testes em Produção)
+
+> **Conceito:** Introduzir falhas controladas em sistemas em produção para verificar resiliência.
+
+| Prática                     | Descrição                                                                   | Ferramenta exemplo    |
+|-----------------------------|-----------------------------------------------------------------------------|-----------------------|
+| **Kill pod aleatório**      | Verificar que o sistema se recupera com réplicas restantes                  | Chaos Monkey, Litmus  |
+| **Injetar latência**        | Inserir delay em chamadas entre serviços                                   | Istio fault injection |
+| **Simular falha de zona**   | Desabilitar uma AZ e verificar failover                                    | AWS FIS, Gremlin      |
+| **CPU/Memory stress**       | Saturar recursos de um pod e verificar autoscaling                         | stress-ng, Litmus     |
+| **Network partition**       | Simular perda de conectividade entre serviços                              | tc (traffic control)  |
+
+**Pré-requisitos obrigatórios:**
+- Observabilidade completa (métricas, logs, traces)
+- Runbook de rollback documentado
+- Blast radius controlado (começar com % mínimo de tráfego)
+- Game day agendado e comunicado
+
+---
+
+## 8. Testes para Front-end
+
+### 8.1 Pirâmide de Testes Front-end
+
+```
+          ╱  ╲
+         ╱ E2E╲              ← Cypress, Playwright (poucos)
+        ╱ Visual ╲
+       ╱──────────╲
+      ╱ Integração  ╲        ← Testing Library (componente + contexto)
+     ╱────────────────╲
+    ╱    Componente      ╲   ← Testing Library (componente isolado)
+   ╱──────────────────────╲
+  ╱       Unitário          ╲ ← Lógica pura, hooks, utils (Jest/Vitest)
+ ╱────────────────────────────╲
+```
+
+### 8.2 Estratégia por Tipo
+
+| Tipo                    | O que testar                                                     | Ferramentas             | Proporção |
+|-------------------------|------------------------------------------------------------------|-------------------------|-----------|
+| **Unitário**            | Hooks customizados, funções utilitárias, state machines, reducers | Jest, Vitest            | ~40%      |
+| **Componente**          | Renderização, interação do usuário, estados (loading, error, empty) | Testing Library        | ~30%      |
+| **Integração**          | Fluxo entre componentes, contexto/providers, rotas               | Testing Library + MSW   | ~20%      |
+| **Visual Regression**   | Aparência do componente não mudou (screenshot diff)              | Chromatic, Percy, Loki  | ~5%       |
+| **E2E**                 | Fluxos críticos completos (login → ação → resultado)             | Playwright, Cypress     | ~5%       |
+
+### 8.3 Princípios de Teste Front-end
+
+| Princípio                                 | Descrição                                                                      |
+|-------------------------------------------|--------------------------------------------------------------------------------|
+| **Teste como o usuário usa**              | Buscar por texto, role, label — nunca por classe CSS ou ID de implementação    |
+| **Evite testar detalhes de implementação**| Não teste state interno, métodos privados, ou chamadas de lifecycle             |
+| **Prefira queries acessíveis**            | `getByRole`, `getByLabelText`, `getByText` > `getByTestId` > nunca `querySelector` |
+| **Mock na fronteira de rede**             | Usar MSW (Mock Service Worker) para interceptar chamadas HTTP                  |
+| **Teste estados do componente**           | Loading, success, error, empty — cada estado é um cenário                      |
+
+### 8.4 Exemplos — React com Testing Library
+
+#### Teste de componente isolado
+
+```tsx
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { ProductCard } from './ProductCard';
+
+describe('ProductCard', () => {
+  it('exibe nome, preço e botão de adicionar ao carrinho', () => {
+    render(<ProductCard name="Notebook" price={2999.90} />);
+
+    expect(screen.getByRole('heading', { name: 'Notebook' })).toBeInTheDocument();
+    expect(screen.getByText('R$ 2.999,90')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /adicionar/i })).toBeEnabled();
+  });
+
+  it('desabilita botão quando produto fora de estoque', () => {
+    render(<ProductCard name="Notebook" price={2999.90} inStock={false} />);
+
+    expect(screen.getByRole('button', { name: /adicionar/i })).toBeDisabled();
+  });
+});
+```
+
+#### Teste de integração com MSW
+
+```tsx
+import { rest } from 'msw';
+import { setupServer } from 'msw/node';
+import { render, screen, waitFor } from '@testing-library/react';
+import { OrderHistory } from './OrderHistory';
+
+const server = setupServer(
+  rest.get('/api/orders', (req, res, ctx) =>
+    res(ctx.json([
+      { id: '1', product: 'Notebook', status: 'delivered' },
+      { id: '2', product: 'Mouse', status: 'shipping' },
+    ]))
+  )
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+test('exibe lista de pedidos do usuário', async () => {
+  render(<OrderHistory userId="user-123" />);
+
+  expect(screen.getByText(/carregando/i)).toBeInTheDocument();
+
+  await waitFor(() => {
+    expect(screen.getByText('Notebook')).toBeInTheDocument();
+    expect(screen.getByText('Mouse')).toBeInTheDocument();
+  });
+});
+
+test('exibe mensagem de erro quando API falha', async () => {
+  server.use(
+    rest.get('/api/orders', (req, res, ctx) => res(ctx.status(500)))
+  );
+
+  render(<OrderHistory userId="user-123" />);
+
+  await waitFor(() => {
+    expect(screen.getByText(/erro ao carregar/i)).toBeInTheDocument();
+  });
+});
+```
+
+### 8.5 Anti-Patterns Front-end
+
+| Anti-pattern                                | Problema                                        | Solução                                            |
+|---------------------------------------------|--------------------------------------------------|----------------------------------------------------|
+| Buscar por className ou CSS selector        | Quebra com mudança de estilo                     | Usar `getByRole`, `getByText`, `getByLabelText`   |
+| Testar state interno do componente          | Acoplado à implementação                         | Testar o que o usuário vê/interage                 |
+| Snapshot de componente inteiro              | Diff enorme, aprovação cega                      | Snapshots pequenos e focados, ou visual regression |
+| E2E para tudo                               | Lento, frágil, caro                              | E2E apenas para happy paths críticos               |
+| Não testar acessibilidade                   | Problemas a11y chegam a produção                 | `jest-axe`, `@axe-core/playwright` em todo componente |
+
+---
+
+## 9. Testes em Arquitetura de Microsserviços
+
+### 9.1 Desafios Específicos
+
+| Desafio                            | Descrição                                                                         |
+|------------------------------------|-----------------------------------------------------------------------------------|
+| **Ownership distribuído**          | Cada serviço é de um time diferente — quem testa a integração?                    |
+| **Versões independentes**          | Serviço A pode deployar sem Serviço B estar pronto                                |
+| **Consistência eventual**          | Dados propagam via eventos — estado inconsistente é temporariamente normal         |
+| **Explosão combinatória**          | N serviços × M versões = testes E2E exponenciais                                  |
+| **Ambiente complexo**              | Subir todos os serviços localmente é impraticável                                 |
+
+### 9.2 Estratégia Recomendada
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   MICROSSERVIÇOS                             │
+│                                                              │
+│  Serviço A          Serviço B          Serviço C            │
+│  ┌──────────┐       ┌──────────┐       ┌──────────┐        │
+│  │ Unit     │       │ Unit     │       │ Unit     │        │
+│  │ Integ    │       │ Integ    │       │ Integ    │        │
+│  │ Contract │◄─────►│ Contract │◄─────►│ Contract │        │
+│  └──────────┘       └──────────┘       └──────────┘        │
+│        │                  │                  │               │
+│        └──────────────────┴──────────────────┘               │
+│                           │                                  │
+│                    ┌──────────────┐                          │
+│                    │ E2E / Smoke  │  ← Poucos, pós-deploy   │
+│                    │ (Staging)    │                          │
+│                    └──────────────┘                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Princípio:** Cada serviço é testável **isoladamente**. A integração entre serviços é validada via **testes de contrato**, não via E2E.
+
+### 9.3 Consumer-Driven Contract Testing (CDCT)
+
+| Passo | Ator         | Ação                                                                      |
+|-------|--------------|---------------------------------------------------------------------------|
+| 1     | Consumidor   | Define suas expectativas (quais campos, tipos, valores espera da API/evento) |
+| 2     | Consumidor   | Gera um "contrato" (arquivo JSON/Pact) e publica no broker               |
+| 3     | Produtor     | Baixa o contrato e roda contra sua implementação real                     |
+| 4     | Produtor     | Se passa → compatível. Se falha → breaking change detectada antes de prod |
+
+**Ferramentas:** Pact (multi-linguagem), Spring Cloud Contract (Java), Specmatic (OpenAPI-based)
+
+### 9.4 Service Virtualization
+
+Quando testar *seu* serviço mas a dependência ainda não está pronta (ou é cara):
+
+| Abordagem                | Descrição                                               | Ferramenta exemplo      |
+|--------------------------|---------------------------------------------------------|-------------------------|
+| **WireMock/Mountebank**  | Servidor HTTP que simula APIs com respostas configuradas | WireMock, Mountebank    |
+| **Testcontainers**       | Containers efêmeros com mocks de infraestrutura         | Testcontainers          |
+| **LocalStack**           | Simulação de serviços AWS localmente                    | LocalStack              |
+| **MSW**                  | Mock a nível de rede para front-end/Node                | Mock Service Worker      |
+
+### 9.5 Padrões de Teste por Tipo de Comunicação
+
+| Comunicação           | Padrão de teste                                                              |
+|-----------------------|------------------------------------------------------------------------------|
+| **REST síncrono**     | Contract test (OpenAPI/Pact) + Integration test com WireMock                 |
+| **gRPC**              | Contract test (proto validation) + Integration test com servidor in-process  |
+| **Eventos (Kafka/SQS)** | Contract test (schema registry) + Integration test com Testcontainers     |
+| **GraphQL**           | Contract test (schema) + Integration test via HTTP                           |
+| **Saga/Coreografia**  | Teste de cada step isolado + E2E do fluxo completo em staging               |
+
+---
+
+## 10. Dados de Teste e Ambientes
+
+### 10.1 Estratégia de Test Data
 
 | Estratégia               | Quando usar                                     | Cuidados                                              |
 |--------------------------|-------------------------------------------------|-------------------------------------------------------|
@@ -481,7 +929,7 @@ verificar(resultado)
 | **Dados sintéticos**     | Testes E2E, staging, dados sensíveis             | Gerar via algoritmo determinístico; nunca usar dados reais de produção |
 | **Copy de produção (anonimizado)** | Testes de carga, validação de migração  | Obrigatório anonimização; considerar volume             |
 
-### 6.2 Regras de Dados
+### 10.2 Regras de Dados
 
 | Regra  | Descrição                                                                                              |
 |--------|--------------------------------------------------------------------------------------------------------|
@@ -491,7 +939,7 @@ verificar(resultado)
 | D4     | Dados de teste são **código** — versionados, revisados e mantidos.                                     |
 | D5     | Preferir **builders com defaults** sobre fixtures estáticas — builders são mais flexíveis e legíveis.  |
 
-### 6.3 Isolamento e Paralelismo
+### 10.3 Isolamento e Paralelismo
 
 | Mecanismo                           | Descrição                                                               |
 |--------------------------------------|-------------------------------------------------------------------------|
@@ -501,7 +949,7 @@ verificar(resultado)
 | **Nomes com sufixo único**           | Filas, tópicos e tabelas temporárias usam sufixo único por execução     |
 | **Clock determinístico**             | Relógio injetável permite testar lógica temporal sem depender de `now()` |
 
-### 6.4 Ambientes
+### 10.4 Ambientes
 
 | Ambiente     | Propósito                                           | Tipos de teste que rodam                     |
 |--------------|------------------------------------------------------|----------------------------------------------|
@@ -522,9 +970,9 @@ verificar(resultado)
 
 ---
 
-## 7. CI/CD e Gates de Qualidade
+## 11. CI/CD e Gates de Qualidade
 
-### 7.1 Pipeline Recomendado
+### 11.1 Pipeline Recomendado
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -560,7 +1008,7 @@ verificar(resultado)
 └─────────────┴───────────────────────────────────────────────────────┘
 ```
 
-### 7.2 Gates de Qualidade
+### 11.2 Gates de Qualidade
 
 | Gate                          | Valor mínimo                     | Onde aplica               | Ação se falhar              |
 |-------------------------------|----------------------------------|----------------------------|-----------------------------|
@@ -574,7 +1022,7 @@ verificar(resultado)
 
 > **Nota:** Os valores entre colchetes `[X]` são sugestões. Cada time deve calibrar com base na maturidade e criticidade do serviço.
 
-### 7.3 Política de Quarentena para Testes Flakey
+### 11.3 Política de Quarentena para Testes Flakey
 
 | Etapa | Ação                                                                                      |
 |-------|-------------------------------------------------------------------------------------------|
@@ -592,9 +1040,9 @@ verificar(resultado)
 
 ---
 
-## 8. Métricas e Observabilidade de Testes
+## 12. Métricas e Observabilidade de Testes
 
-### 8.1 Métricas Obrigatórias
+### 12.1 Métricas Obrigatórias
 
 | Métrica                          | Fórmula / Definição                                                    | Meta               | Frequência   |
 |----------------------------------|-------------------------------------------------------------------------|---------------------|--------------|
@@ -607,7 +1055,7 @@ verificar(resultado)
 | **Testes em quarentena**        | Nº de testes atualmente na suíte de quarentena                          | ≤ [10]              | Contínuo     |
 | **Tempo médio de correção de flake** | Média de dias entre identificação e correção de teste flaky       | ≤ [5] dias úteis    | Mensal       |
 
-### 8.2 Observabilidade nos Testes
+### 12.2 Observabilidade nos Testes
 
 | Prática                               | Descrição                                                                         |
 |----------------------------------------|-----------------------------------------------------------------------------------|
@@ -618,7 +1066,7 @@ verificar(resultado)
 | **Métricas de tempo por teste**        | Identificar testes lentos (> [2]s para unitário, > [30]s para integração)          |
 | **Rerun automático com log enriquecido** | Na primeira falha, re-executar com nível de log aumentado para capturar mais contexto |
 
-### 8.3 Dashboard Recomendado
+### 12.3 Dashboard Recomendado
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -636,9 +1084,65 @@ verificar(resultado)
 
 ---
 
-## 9. Definition of Done (DoD) e Checklists
+## 13. Ferramentas e Frameworks Recomendados
 
-### 9.1 Definition of Done — Features
+### 13.1 Por Linguagem/Plataforma
+
+| Linguagem     | Unit Test            | Mocking              | Integration/Container   | Property-Based      | Mutation           |
+|---------------|----------------------|----------------------|-------------------------|---------------------|--------------------||
+| **Java**      | JUnit 5              | Mockito, MockK (Kotlin) | Testcontainers, Spring Boot Test | jqwik          | PITest             |
+| **Kotlin**    | JUnit 5, Kotest      | MockK                | Testcontainers          | Kotest property     | PITest             |
+| **Go**        | testing (stdlib)     | testify/mock, gomock | Testcontainers-Go       | gopter, rapid       | go-mutesting       |
+| **TypeScript**| Jest, Vitest         | jest.mock, ts-mockito| Testcontainers-Node     | fast-check          | Stryker            |
+| **Python**    | pytest               | unittest.mock, pytest-mock | Testcontainers-Python | Hypothesis       | mutmut             |
+| **C#/.NET**   | xUnit, NUnit         | Moq, NSubstitute     | Testcontainers-dotnet   | FsCheck             | Stryker.NET        |
+
+### 13.2 Por Tipo de Teste
+
+| Tipo de Teste          | Ferramentas recomendadas                                                       |
+|------------------------|--------------------------------------------------------------------------------|
+| **Contract Testing**   | Pact, Spring Cloud Contract, Specmatic                                         |
+| **API Testing**        | REST Assured (Java), Supertest (Node), httptest (Go)                           |
+| **E2E / Browser**      | Playwright, Cypress                                                            |
+| **Visual Regression**  | Chromatic, Percy, Loki, BackstopJS                                             |
+| **Load/Performance**   | k6, Gatling, JMeter, Locust                                                   |
+| **Security (SAST)**    | SonarQube, Semgrep, CodeQL, Snyk Code                                          |
+| **Security (DAST)**    | OWASP ZAP, Burp Suite                                                          |
+| **Chaos Engineering**  | Litmus, Chaos Monkey, Gremlin, AWS FIS                                         |
+| **Coverage**           | JaCoCo (Java), Istanbul/c8 (JS/TS), coverage.py (Python), go tool cover (Go)  |
+| **Accessibility**      | axe-core, jest-axe, @axe-core/playwright, pa11y                               |
+
+### 13.3 Infraestrutura de Teste
+
+| Ferramenta            | Propósito                                                                    |
+|-----------------------|---------------------------------------------------------------------------------|
+| **Testcontainers**    | Containers efêmeros para banco, fila, cache — multi-linguagem                  |
+| **LocalStack**        | Simulação de serviços AWS localmente (S3, SQS, DynamoDB, Lambda, etc.)        |
+| **WireMock**          | Servidor HTTP simula APIs externas com respostas configuráveis                 |
+| **MSW**               | Mock Service Worker — intercepta requisições HTTP a nível de rede (front-end)   |
+| **MailHog / MailPit** | Servidor SMTP fake para testar envio de e-mails                                |
+| **MinIO**             | Servidor S3-compatível para testes de storage                                  |
+| **Toxiproxy**         | Proxy programável para simular falhas de rede (latência, timeout, disconnect) |
+
+### 13.4 Análise Estática como Gate de Qualidade
+
+| Ferramenta        | O que verifica                                                                 |
+|-------------------|--------------------------------------------------------------------------------|
+| **SonarQube**     | Code smells, bugs, vulnerabilities, cobertura, duplicação                     |
+| **ESLint/Biome**  | Padrões de código, erros comuns (JS/TS)                                        |
+| **Checkstyle**    | Convenções de código (Java)                                                    |
+| **golangci-lint** | Linters agregados para Go                                                      |
+| **Ruff**          | Linter ultra-rápido para Python                                                |
+| **Semgrep**       | Análise estática customizável, foco em segurança                                |
+| **Trivy/Snyk**    | Vulnerabilidades em dependências e imagens Docker                               |
+
+> **Regra:** Análise estática deve rodar **antes** dos testes na pipeline. Código que não passa no lint não merece ter testes executados.
+
+---
+
+## 14. Definition of Done (DoD) e Checklists
+
+### 14.1 Definition of Done — Features
 
 Uma feature é considerada **done** quando **todos** os itens abaixo são atendidos:
 
@@ -655,7 +1159,7 @@ Uma feature é considerada **done** quando **todos** os itens abaixo são atendi
 | D9  | Métricas/alertas de observabilidade configurados para o novo fluxo.                         |
 | D10 | Smoke test pós-deploy atualizado se novo fluxo crítico.                                     |
 
-### 9.2 Definition of Done — Bugs
+### 14.2 Definition of Done — Bugs
 
 | #   | Critério                                                                    |
 |-----|-----------------------------------------------------------------------------|
@@ -665,7 +1169,7 @@ Uma feature é considerada **done** quando **todos** os itens abaixo são atendi
 | B4  | Root cause documentado no ticket.                                           |
 | B5  | Verificado se o mesmo padrão de bug existe em outros módulos (busca ampla). |
 
-### 9.3 Checklist de Pull Request
+### 14.3 Checklist de Pull Request
 
 ```
 ## Checklist de PR — Qualidade
@@ -691,7 +1195,7 @@ Uma feature é considerada **done** quando **todos** os itens abaixo são atendi
 - [ ] Alertas configurados para novos pontos de falha
 ```
 
-### 9.4 Anti-Patterns e Sinais Vermelhos
+### 14.4 Anti-Patterns e Sinais Vermelhos
 
 | Sinal Vermelho                                     | Por que é problema                                         | Ação corretiva                                        |
 |----------------------------------------------------|------------------------------------------------------------|-------------------------------------------------------|
@@ -708,7 +1212,7 @@ Uma feature é considerada **done** quando **todos** os itens abaixo são atendi
 
 ---
 
-## 10. Glossário
+## 15. Glossário
 
 | Termo                        | Definição                                                                                                |
 |------------------------------|----------------------------------------------------------------------------------------------------------|
@@ -740,7 +1244,20 @@ Uma feature é considerada **done** quando **todos** os itens abaixo são atendi
 | **Stub**                     | Implementação simplificada de uma dependência que retorna respostas pré-definidas.                        |
 | **Teardown**                 | Fase de limpeza após a execução de um teste, revertendo efeitos colaterais.                              |
 | **Test double**              | Termo genérico para qualquer substituto de dependência em testes (mock, stub, fake, spy, dummy).          |
+| **Testcontainers**           | Biblioteca que provê containers Docker efêmeros para testes de integração.                               |
+| **Shift-left**               | Prática de mover atividades de qualidade para fases mais iniciais do ciclo de desenvolvimento.           |
+| **Property-based testing**   | Técnica que gera inputs aleatórios e verifica propriedades invariantes do código, em vez de exemplos fixos. |
+| **Snapshot testing**         | Técnica que salva a saída de um componente e compara com versões futuras para detectar mudanças.          |
+| **Chaos engineering**        | Disciplina de experimentar em sistemas distribuídos para construir confiança na resiliência.              |
+| **MSW (Mock Service Worker)**| Ferramenta que intercepta requisições HTTP a nível de service worker para testes front-end.               |
+| **CDCT**                     | Consumer-Driven Contract Testing — abordagem onde o consumidor define suas expectativas de contrato.      |
+| **Spy**                      | Test double que registra chamadas para verificação posterior, podendo delegar ao objeto real.             |
+| **Fake**                     | Implementação funcional simplificada usada em testes (ex.: repositório in-memory).                       |
+| **Dummy**                    | Objeto passado como parâmetro mas nunca utilizado, apenas para satisfazer assinatura.                    |
+| **Visual regression test**   | Teste que compara screenshots de componentes/páginas para detectar mudanças visuais inesperadas.         |
+| **Service virtualization**   | Simulação de sistemas externos (APIs, serviços) para permitir testes independentes.                      |
+| **Synthetic monitoring**     | Testes automatizados que simulam interações de usuário em produção para detectar problemas proativamente. |
 
 ---
 
-> **Nota final:** Este documento deve ser revisado trimestralmente. Os valores entre `[colchetes]` são placeholders que devem ser calibrados por cada time conforme a maturidade e criticidade do sistema. Em caso de conflito com outros documentos normativos, a versão mais recente prevalece.
+> **Nota final:** Este documento deve ser revisado trimestralmente. Os valores entre `[colchetes]` são sugestões que devem ser calibrados por cada time conforme a maturidade e criticidade do sistema. Em caso de conflito com outros documentos normativos, a versão mais recente prevalece. Para tópicos complementares, consulte os documentos relacionados listados no cabeçalho.

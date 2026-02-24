@@ -15,7 +15,6 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   └── rest/
 │       └── rest-best-practices.md
 ├── aws/                        # AWS Best Practices & Well-Architected
-│   ├── README.md
 │   ├── well-architected-framework.md
 │   ├── serverless/
 │   │   ├── serverless-best-practices.md
@@ -31,8 +30,16 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   │   └── databases-best-practices.md
 │   ├── observability/
 │   │   └── observability-best-practices.md
-│   └── cost-optimization/
-│       └── cost-optimization-guide.md
+│   ├── cost-optimization/
+│   │   └── cost-optimization-guide.md
+│   ├── cicd/
+│   │   └── cicd-best-practices.md
+│   ├── reliability/
+│   │   └── disaster-recovery.md
+│   ├── storage/
+│   │   └── storage-best-practices.md
+│   └── governance/
+│       └── multi-account-strategy.md
 ├── design-patterns/            # Design Patterns (agnóstico a linguagem)
 │   ├── README.md
 │   ├── architectural-patterns.md
@@ -55,6 +62,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── microservice-patterns.md
 │   └── patterns/
 │       ├── api-composition.md
+│       ├── api-gateway-bff.md
 │       ├── backpressure.md
 │       ├── blue-green.md
 │       ├── bulkhead.md
@@ -125,6 +133,9 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── 38-twitter-social-feed/
 │   ├── 39-instagram-photo-sharing/
 │   ├── 40-whatsapp-chat-system/
+│   ├── 41-youtube-netflix-video-streaming/
+│   ├── 42-uber-ride-sharing/
+│   ├── 43-google-maps-navigation/
 │   └── system-design-big-techs.md
 └── terraform/                  # Terraform / IaC
     └── aws/
@@ -142,14 +153,14 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 | Seção | Descrição |
 |-------|-----------|
 | **API** | Boas práticas para design de APIs REST, GraphQL e gRPC |
-| **AWS** | Well-Architected, Serverless, Security, Networking, Containers, Databases, Observability, Cost Optimization |
+| **AWS** | Well-Architected, Serverless, Security, Networking, Containers, Databases, Observability, Cost Optimization, CI/CD, Disaster Recovery, Storage, Multi-Account |
 | **Design Patterns** | Padrões criacionais, estruturais, comportamentais e arquiteturais |
 | **Java** | Estrutura de projetos para Spring Boot, Quarkus e Micronaut |
 | **Go** | Estrutura de projetos com Gin |
-| **Microservice Patterns** | 26 padrões essenciais para arquitetura de microsserviços |
+| **Microservice Patterns** | 27 padrões essenciais para arquitetura de microsserviços |
 | **Quality Engineering** | Estratégias de testes e qualidade |
 | **SOLID** | Princípios SOLID aplicados |
-| **System Design** | 30 conceitos fundamentais de design de sistemas |
+| **System Design** | 43 tópicos de design de sistemas — conceitos fundamentais e case studies |
 | **Terraform** | IaC com Terraform para AWS — estrutura, módulos, segurança e testes |
 
 ## Como usar com o GitHub Copilot

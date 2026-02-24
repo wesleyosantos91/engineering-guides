@@ -380,14 +380,28 @@ resource "aws_config_config_rule" "unattached_ebs" {
 }
 
 # Migrar gp2 → gp3 (20% mais barato, melhor performance)
-# Usar AWS Config para detectar volumes gp2
+# Usar Config custom rule para detectar volumes gp2 restantes
 resource "aws_config_config_rule" "ebs_gp3_check" {
   name = "ebs-gp3-migration"
 
   source {
-    owner             = "AWS"
-    source_identifier = "EC2_VOLUME_INUSE_CHECK"
+    owner             = "CUSTOM_LAMBDA"
+    source_identifier = aws_lambda_function.ebs_volume_type_check.arn
+
+    source_detail {
+      event_source = "aws.config"
+      message_type = "ConfigurationItemChangeNotification"
+    }
   }
+
+  scope {
+    compliance_resource_types = ["AWS::EC2::Volume"]
+  }
+
+  # Alternativa: usar AWS Config Advanced Query
+  # SELECT resourceId, resourceType, configuration.volumeType
+  # WHERE resourceType = 'AWS::EC2::Volume'
+  # AND configuration.volumeType = 'gp2'
 }
 ```
 
@@ -609,6 +623,112 @@ resource "aws_scheduler_schedule" "start_dev" {
   }
 }
 ```
+
+---
+
+## Data Transfer Costs
+
+### Custos Mais Comuns (Sa-East-1)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│              Data Transfer Cost Map                           │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  GRÁTIS:                                                     │
+│  • Tráfego de entrada (ingress) → Sempre grátis             │
+│  • Entre serviços na MESMA AZ → Grátis                      │
+│  • S3 → CloudFront → Internet → Mais barato que S3 direto   │
+│  • VPC Endpoint (Gateway) para S3/DynamoDB → Grátis         │
+│                                                              │
+│  CUIDADO ($$$):                                              │
+│  │                                                           │
+│  │  Cross-AZ: $0.01/GB cada direção ($0.02 round-trip)      │
+│  │  ├── ECS tasks em multi-AZ                               │
+│  │  ├── RDS Multi-AZ replication (incluso)                   │
+│  │  └── App → Redis em outra AZ                             │
+│  │                                                           │
+│  │  NAT Gateway Processing: $0.045/GB                        │
+│  │  ├── Lambda em VPC → Internet                            │
+│  │  ├── ECS → APIs externas (Stripe, etc)                   │
+│  │  └── Mitigar: VPC Endpoints para serviços AWS            │
+│  │                                                           │
+│  │  Cross-Region: $0.02/GB                                   │
+│  │  ├── S3 replication                                       │
+│  │  ├── DynamoDB Global Tables                               │
+│  │  └── Aurora Global Database                               │
+│  │                                                           │
+│  │  Internet Egress: $0.15/GB (primeiros 10TB/mês)          │
+│  │  └── Mitigar: CloudFront ($0.085/GB SA)                  │
+│  │                                                           │
+│  │  VPC Endpoint (Interface): $0.01/GB + $0.01/hora         │
+│  │  └── Ainda mais barato que NAT Gateway para AWS APIs     │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Estratégias de Redução de Data Transfer
+
+```hcl
+# 1. VPC Gateway Endpoints (S3 + DynamoDB) — GRÁTIS
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id       = var.vpc_id
+  service_name = "com.amazonaws.${var.region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = var.private_route_table_ids
+}
+
+resource "aws_vpc_endpoint" "dynamodb" {
+  vpc_id       = var.vpc_id
+  service_name = "com.amazonaws.${var.region}.dynamodb"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = var.private_route_table_ids
+}
+
+# 2. Interface Endpoints para serviços mais usados
+#    (mais barato que NAT Gateway para alto volume)
+resource "aws_vpc_endpoint" "interface_endpoints" {
+  for_each = toset([
+    "com.amazonaws.${var.region}.ecr.api",
+    "com.amazonaws.${var.region}.ecr.dkr",
+    "com.amazonaws.${var.region}.logs",
+    "com.amazonaws.${var.region}.secretsmanager",
+    "com.amazonaws.${var.region}.sqs",
+    "com.amazonaws.${var.region}.sns",
+  ])
+
+  vpc_id              = var.vpc_id
+  service_name        = each.value
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = var.private_subnet_ids
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+}
+```
+
+**Cálculo: NAT Gateway vs VPC Endpoints**
+
+| Volume mensal | NAT Gateway | VPC Endpoints (6) | Economia |
+|:-------------:|:-----------:|:------------------:|:--------:|
+| 100 GB | $4.50 + $32 = $36.50 | $0.10 + $43 = $43 | NAT mais barato |
+| 1 TB | $45 + $32 = $77 | $10 + $43 = $53 | **VPC EP: 31%** |
+| 10 TB | $450 + $32 = $482 | $100 + $43 = $143 | **VPC EP: 70%** |
+
+> **Regra:** Para > 500GB/mês de tráfego AWS, Interface Endpoints pagam-se sozinhos.
+
+---
+
+## Reserved Instances vs Savings Plans
+
+| Aspecto | Reserved Instances (RI) | Compute Savings Plans | EC2 Instance SP |
+|---------|:-----------------------:|:---------------------:|:---------------:|
+| Desconto | Até 72% | Até 66% | Até 72% |
+| Flexibilidade de família | ❌ (mesma família) | ✅ (qualquer) | ❌ (mesma família) |
+| Flexibilidade de região | ❌ (mesma região) | ✅ (qualquer) | ❌ (mesma região) |
+| Aplica a Fargate/Lambda | ❌ | ✅ | ❌ |
+| Marketplace revenda | ✅ | ❌ | ❌ |
+| Compromisso | 1 ou 3 anos | 1 ou 3 anos | 1 ou 3 anos |
+| Recomendação | Legacy, revenda | **Padrão recomendado** | Workload estável |
 
 ---
 

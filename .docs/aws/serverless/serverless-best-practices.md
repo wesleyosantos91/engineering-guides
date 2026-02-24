@@ -218,6 +218,153 @@ public class OrderHandler implements RequestHandler<APIGatewayProxyRequestEvent,
 # }
 ```
 
+### Lambda SnapStart (Java)
+
+Reduz cold start de Java de **~5-10s** para **~200ms** tirando snapshot da JVM inicializada.
+
+```hcl
+# Habilitar SnapStart para Lambda Java
+resource "aws_lambda_function" "java_function" {
+  function_name = "${var.project}-orders"
+  role          = aws_iam_role.lambda.arn
+  handler       = "com.example.OrderHandler::handleRequest"
+  runtime       = "java21"
+  architectures = ["arm64"]
+  memory_size   = 1024
+  timeout       = 30
+
+  filename         = var.deployment_package
+  source_code_hash = filebase64sha256(var.deployment_package)
+
+  snap_start {
+    apply_on = "PublishedVersions"  # SnapStart ativo
+  }
+
+  environment {
+    variables = {
+      ENVIRONMENT = var.environment
+    }
+  }
+
+  tags = var.tags
+}
+
+# OBRIGATÓRIO: SnapStart requer versão publicada + alias
+resource "aws_lambda_alias" "live" {
+  name             = "live"
+  function_name    = aws_lambda_function.java_function.function_name
+  function_version = aws_lambda_function.java_function.version
+}
+```
+
+**Limitações do SnapStart:**
+- Apenas Java 11, 17 e 21 (managed runtimes)
+- Não suporta Provisioned Concurrency simultaneamente
+- Não suporta EFS, `arm64` com custom runtime, ou tamanho > 250MB (descompactado)
+- Uniqueness: evitar caching de valores randômicos no init (ex: `UUID.randomUUID()`)
+- Usar `CRaC` (Coordinated Restore at Checkpoint) para hooks de restore
+
+```java
+// Hook de restore — regenerar valores que devem ser únicos pós-restore
+import org.crac.Context;
+import org.crac.Core;
+import org.crac.Resource;
+
+public class UniqueIdGenerator implements Resource {
+    private String instanceId;
+
+    public UniqueIdGenerator() {
+        Core.getGlobalContext().register(this);
+        this.instanceId = UUID.randomUUID().toString();
+    }
+
+    @Override
+    public void afterRestore(Context<? extends Resource> context) {
+        // Regenerar após restore do snapshot
+        this.instanceId = UUID.randomUUID().toString();
+    }
+}
+```
+
+### Lambda Layers
+
+```hcl
+# Layer para dependências compartilhadas (AWS SDK, Powertools, etc)
+resource "aws_lambda_layer_version" "shared_deps" {
+  layer_name          = "${var.project}-shared-deps"
+  filename            = "layers/shared-deps.zip"
+  source_code_hash    = filebase64sha256("layers/shared-deps.zip")
+  compatible_runtimes = ["java21"]
+  description         = "Shared dependencies: AWS SDK v2, Powertools, Jackson"
+}
+
+# Aplicar layer à função
+resource "aws_lambda_function" "with_layer" {
+  function_name = "${var.project}-processor"
+  # ...
+
+  layers = [
+    aws_lambda_layer_version.shared_deps.arn,
+    # Layer gerenciado da AWS (Powertools)
+    "arn:aws:lambda:${var.region}:094274105915:layer:AWSLambdaPowertoolsJavaV2:51"
+  ]
+}
+```
+
+**Boas práticas para Layers:**
+- Máximo 5 layers por função, total ≤ 250MB (descompactado)
+- Usar para: dependências compartilhadas, extensions, custom runtimes
+- Estrutura do ZIP: `java/lib/` para jars em Java
+- Versionar layers (cada deploy cria nova versão)
+
+### Lambda@Edge & CloudFront Functions
+
+```hcl
+# Lambda@Edge — executa no edge (CloudFront)
+resource "aws_lambda_function" "at_edge" {
+  provider = aws.us_east_1  # OBRIGATÓRIO: Lambda@Edge deve estar em us-east-1
+
+  function_name = "${var.project}-auth-at-edge"
+  role          = aws_iam_role.lambda_edge.arn
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"  # Lambda@Edge: Node.js ou Python
+  timeout       = 5             # Max 5s para viewer events, 30s para origin events
+  memory_size   = 128           # Max 128MB para viewer events
+
+  filename         = "edge/auth.zip"
+  source_code_hash = filebase64sha256("edge/auth.zip")
+  publish          = true  # Required for Lambda@Edge
+}
+
+# Associar ao CloudFront
+resource "aws_cloudfront_distribution" "main" {
+  # ...
+  default_cache_behavior {
+    # ...
+    lambda_function_association {
+      event_type   = "viewer-request"           # Antes de chegar ao cache
+      lambda_arn   = aws_lambda_function.at_edge.qualified_arn
+      include_body = false
+    }
+  }
+}
+```
+
+```
+Lambda@Edge vs CloudFront Functions:
+┌──────────────────────┬──────────────────────┬──────────────────┐
+│                      │ Lambda@Edge          │ CloudFront Func  │
+├──────────────────────┼──────────────────────┼──────────────────┤
+│ Runtime              │ Node.js, Python      │ JavaScript only  │
+│ Execution time       │ 5s (viewer) / 30s    │ < 1ms            │
+│ Memory               │ 128MB-10GB           │ 2MB              │
+│ Network access       │ Sim                  │ Não              │
+│ Preço                │ ~$0.60 / 1M requests │ ~$0.10 / 1M      │
+│ Use cases            │ Auth, A/B test,      │ Header/URL       │
+│                      │ origin selection     │ manipulation     │
+└──────────────────────┴──────────────────────┴──────────────────┘
+```
+
 ---
 
 ## API Gateway

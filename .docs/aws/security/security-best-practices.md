@@ -97,6 +97,94 @@ Guia completo de segurança na AWS seguindo o modelo de responsabilidade compart
 }
 ```
 
+### IAM Identity Center (SSO)
+
+```hcl
+# IAM Identity Center — acesso centralizado multi-account
+resource "aws_ssoadmin_permission_set" "admin" {
+  name             = "AdministratorAccess"
+  description      = "Full admin access"
+  instance_arn     = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+  session_duration = "PT4H"  # 4 horas
+
+  tags = var.tags
+}
+
+resource "aws_ssoadmin_managed_policy_attachment" "admin" {
+  instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+  permission_set_arn = aws_ssoadmin_permission_set.admin.arn
+  managed_policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+# Permission Set com política customizada (developer)
+resource "aws_ssoadmin_permission_set" "developer" {
+  name             = "DeveloperAccess"
+  description      = "Developer access with boundaries"
+  instance_arn     = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+  session_duration = "PT8H"
+
+  tags = var.tags
+}
+
+resource "aws_ssoadmin_permission_set_inline_policy" "developer" {
+  instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+  permission_set_arn = aws_ssoadmin_permission_set.developer.arn
+
+  inline_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowDeveloperServices"
+        Effect = "Allow"
+        Action = [
+          "ecs:*", "ecr:*", "lambda:*",
+          "logs:*", "cloudwatch:*", "xray:*",
+          "s3:GetObject", "s3:PutObject", "s3:ListBucket",
+          "dynamodb:*", "sqs:*", "sns:*",
+          "secretsmanager:GetSecretValue",
+          "ssm:GetParameter*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "DenyDangerousActions"
+        Effect = "Deny"
+        Action = [
+          "iam:CreateUser", "iam:CreateAccessKey",
+          "organizations:*", "account:*",
+          "ec2:*Host*", "ec2:*ReservedInstances*"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Associar grupo a conta
+resource "aws_ssoadmin_account_assignment" "dev_team" {
+  instance_arn       = tolist(data.aws_ssoadmin_instances.main.arns)[0]
+  permission_set_arn = aws_ssoadmin_permission_set.developer.arn
+
+  principal_id   = aws_identitystore_group.developers.group_id
+  principal_type = "GROUP"
+
+  target_id   = var.dev_account_id
+  target_type = "AWS_ACCOUNT"
+}
+
+data "aws_ssoadmin_instances" "main" {}
+```
+
+**Permission Sets recomendados:**
+
+| Permission Set | Público | Escopo |
+|----------------|---------|--------|
+| AdministratorAccess | Platform team | Acesso total (audit trail) |
+| DeveloperAccess | Devs | Serviços de compute, storage, observability |
+| ReadOnlyAccess | Todos | Leitura para debugging |
+| DatabaseAdmin | DBAs | RDS, DynamoDB, ElastiCache |
+| SecurityAudit | Security team | Leitura de configs de segurança |
+
 ### Permission Boundaries
 
 ```hcl

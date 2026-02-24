@@ -572,6 +572,110 @@ resource "aws_sns_topic_subscription" "slack_high" {
 
 ---
 
+## Synthetic Monitoring & Composite Alarms
+
+### CloudWatch Synthetics (Canaries)
+
+```hcl
+# Canary — teste sintético de disponibilidade
+resource "aws_synthetics_canary" "api_health" {
+  name                 = "${var.project}-api-health"
+  artifact_s3_location = "s3://${aws_s3_bucket.canary_artifacts.id}/canary/"
+  execution_role_arn   = aws_iam_role.canary.arn
+  handler              = "apiCanaryBlueprint.handler"
+  runtime_version      = "syn-nodejs-puppeteer-9.1"
+  zip_file             = "canary/api-health.zip"
+
+  schedule {
+    expression = "rate(5 minutes)"
+  }
+
+  run_config {
+    timeout_in_seconds = 60
+    memory_in_mb       = 960
+    active_tracing     = true  # X-Ray integration
+  }
+
+  vpc_config {
+    subnet_ids         = var.private_subnet_ids
+    security_group_ids = [aws_security_group.canary.id]
+  }
+
+  tags = var.tags
+}
+
+# Script do Canary (API check)
+# canary/nodejs/node_modules/apiCanaryBlueprint.js:
+# const synthetics = require('Synthetics');
+# exports.handler = async () => {
+#   const response = await synthetics.executeHttpStep(
+#     'Verify API',
+#     { hostname: 'api.example.com', path: '/health', port: 443, protocol: 'https:' },
+#     (res) => { if (res.statusCode !== 200) throw 'API unhealthy'; }
+#   );
+# };
+
+# Alarme para Canary falhando
+resource "aws_cloudwatch_metric_alarm" "canary_failed" {
+  alarm_name          = "${var.project}-canary-failed"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "SuccessPercent"
+  namespace           = "CloudWatchSynthetics"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 90
+  alarm_actions       = [aws_sns_topic.alerts["high"].arn]
+
+  dimensions = {
+    CanaryName = aws_synthetics_canary.api_health.name
+  }
+}
+```
+
+### Composite Alarms
+
+```hcl
+# Composite Alarm — combina múltiplos alarmes para reduzir ruído
+resource "aws_cloudwatch_composite_alarm" "service_degraded" {
+  alarm_name = "${var.project}-service-degraded"
+
+  alarm_rule = "ALARM(${aws_cloudwatch_metric_alarm.slo_availability.alarm_name}) OR (ALARM(${aws_cloudwatch_metric_alarm.slo_latency.alarm_name}) AND ALARM(${aws_cloudwatch_metric_alarm.rds_cpu.alarm_name}))"
+
+  alarm_actions = [aws_sns_topic.alerts["critical"].arn]
+  ok_actions    = [aws_sns_topic.alerts["critical"].arn]
+
+  actions_suppressor                    = aws_cloudwatch_composite_alarm.maintenance_window.alarm_name
+  actions_suppressor_wait_period        = 120
+  actions_suppressor_extension_period   = 60
+}
+
+# Maintenance window suppressor — silencia alarmes durante deploy
+resource "aws_cloudwatch_composite_alarm" "maintenance_window" {
+  alarm_name = "${var.project}-maintenance-window"
+  alarm_rule = "FALSE"  # Ativado manualmente durante deploys
+}
+```
+
+### CloudWatch Application Signals
+
+Application Signals (preview) auto-descobre serviços e gera SLOs automaticamente:
+
+```hcl
+# Habilitar Application Signals no ECS
+# Requer ADOT collector com configuração específica
+
+# SLO automático via Application Signals:
+# - Availability SLO: % de requests sem 5xx
+# - Latency SLO: % de requests abaixo do threshold
+
+# Ativar via ECS Task Definition (environment variable):
+# OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
+# OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics
+```
+
+---
+
 ## Observability Checklist
 
 ### Métricas

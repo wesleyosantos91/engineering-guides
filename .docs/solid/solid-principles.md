@@ -1,7 +1,19 @@
+---
+title: "SOLID Principles — Guia Teórico Completo"
+tags: [solid, srp, ocp, lsp, isp, dip, design-principles, oop, clean-code, refactoring, code-review, architecture]
+category: engineering-fundamentals
+audience: developers, tech-leads, ai-assistants
+language: pt-BR
+version: 2.0
+last_updated: 2026-02-24
+---
+
 # SOLID Principles — Guia Teórico
 
 > **Objetivo deste documento:** Servir como referência teórica completa sobre os princípios SOLID, otimizada para uso como **base de conhecimento para assistentes de código (Copilot/AI)** e consulta humana.
 > Abordagem **agnóstica de linguagem** — foca em conceitos, motivações, heurísticas, boas práticas e **pseudocódigo ilustrativo** sem vínculo a tecnologia específica.
+>
+> **Como usar este documento como knowledge base:** Cada seção é autocontida e pode ser referenciada individualmente. As tabelas de heurísticas, code smells e receitas de refatoração são otimizadas para consulta rápida. A seção ["Diretrizes para Code Review assistido por AI"](#diretrizes-para-code-review-assistido-por-ai) contém regras acionáveis para detecção automática de violações.
 
 ---
 
@@ -15,7 +27,42 @@
 | **ISP** | Cliente não depende do que não usa | Interface com 15+ métodos, implementações com stubs vazios | Segregar em role interfaces menores |
 | **DIP** | Depender de abstrações, não de concretizações | Service instancia dependências com `new` | Injeção de dependência + interface no domínio |
 
+**Resumo em uma frase (para referência rápida):**
+
+- **SRP:** Separe o que muda por motivos diferentes — agrupe o que muda junto.
+- **OCP:** Projete para que novos comportamentos sejam adicionados criando código novo, não modificando o existente.
+- **LSP:** Todo subtipo deve cumprir 100% do contrato do tipo base — sem surpresas.
+- **ISP:** Cada cliente deve depender apenas do mínimo que realmente usa.
+- **DIP:** A lógica de negócio define os contratos (interfaces); a infraestrutura os implementa.
+
 > **Decisão rápida:** Quando vir um code smell, consulte a tabela "Code smells que indicam violação de SOLID" nesta mesma seção para identificar qual princípio atacar primeiro.
+
+---
+
+## Glossário
+
+> Termos técnicos utilizados ao longo deste documento, padronizados para evitar ambiguidade.
+
+| Termo | Definição |
+|-------|-----------|
+| **Abstração** | Interface, tipo abstrato ou contrato que define *o quê* sem definir *como*. É o ponto de extensão central para OCP e DIP. |
+| **Ator (stakeholder)** | Pessoa, grupo ou sistema que solicita mudanças em um módulo. Conceito central do SRP reformulado. |
+| **Composição** | Técnica de construir comportamento complexo combinando objetos menores (em oposição à herança). Preferida quando a relação não é "é-um". |
+| **Contrato** | Conjunto de pré-condições, pós-condições e invariantes que definem o comportamento esperado de uma abstração. Base do LSP. |
+| **Coesão** | Grau em que os elementos de um módulo estão funcionalmente relacionados. Alta coesão → boa aplicação de SRP e ISP. |
+| **Acoplamento** | Grau de dependência entre módulos. Baixo acoplamento → boa aplicação de DIP e ISP. |
+| **Delegação** | Padrão onde um objeto repassa uma responsabilidade a outro objeto colaborador, em vez de executá-la diretamente. |
+| **Design smell** | Sintoma no código que indica problemas de design (rigidez, fragilidade, imobilidade, viscosidade). |
+| **God Class** | Anti-pattern onde uma classe acumula muitas responsabilidades, violando SRP. |
+| **Injeção de dependência (DI)** | Técnica onde dependências são fornecidas externamente (via construtor, método ou framework) em vez de instanciadas internamente. Implementa DIP. |
+| **Inversão de controle (IoC)** | Princípio genérico onde o controle do fluxo é delegado a um framework ou container externo. DI é uma forma de IoC. |
+| **Módulo** | Unidade de organização de código — pode ser classe, pacote, namespace, arquivo ou microsserviço, dependendo do nível de abstração. |
+| **Módulo de alto nível** | Contém lógica de negócio e orquestra operações. Não deve depender de detalhes de infraestrutura (DIP). |
+| **Módulo de baixo nível** | Implementa detalhes técnicos (I/O, banco, rede, filesystem). Deve implementar abstrações definidas pelo alto nível (DIP). |
+| **Polimorfismo** | Capacidade de tratar objetos de diferentes tipos através de uma interface comum. Mecanismo central para OCP e LSP. |
+| **Role interface** | Interface projetada a partir da perspectiva do cliente/consumidor, contendo apenas os métodos que aquele papel requer. Oposto de *header interface*. |
+| **Subtipo** | Tipo que estende ou implementa outro tipo (tipo base). Para respeitar LSP, deve ser substituível sem alterar o comportamento esperado. |
+| **YAGNI** | *You Ain't Gonna Need It* — princípio que adverte contra abstrações prematuras. Complementar ao uso pragmático de SOLID. |
 
 ---
 
@@ -23,6 +70,7 @@
 
 - [SOLID Principles — Guia Teórico](#solid-principles--guia-teórico)
   - [Quick Reference — Cheat Sheet](#quick-reference--cheat-sheet)
+  - [Glossário](#glossário)
   - [Sumário](#sumário)
   - [O que é SOLID?](#o-que-é-solid)
   - [Por que SOLID importa?](#por-que-solid-importa)
@@ -77,12 +125,26 @@
   - [SOLID na Prática — Diretrizes Gerais](#solid-na-prática--diretrizes-gerais)
     - [Quando aplicar](#quando-aplicar)
     - [Quando não aplicar (pragmatismo)](#quando-não-aplicar-pragmatismo)
+    - [Métricas e limiares de referência](#métricas-e-limiares-de-referência)
     - [Code smells que indicam violação de SOLID](#code-smells-que-indicam-violação-de-solid)
-    - [Receitas de refatoração](#receitas-de-refatoração)
     - [Checklist de revisão](#checklist-de-revisão)
+    - [Receitas de refatoração](#receitas-de-refatoração)
+      - [Receita 1: God Class → SRP](#receita-1-god-class--srp)
+      - [Receita 2: if/else sobre tipos → OCP](#receita-2-ifelse-sobre-tipos--ocp)
+      - [Receita 3: Herança incorreta → LSP](#receita-3-herança-incorreta--lsp)
+      - [Receita 4: Fat Interface → ISP](#receita-4-fat-interface--isp)
+      - [Receita 5: Dependência direta → DIP](#receita-5-dependência-direta--dip)
   - [SOLID em Arquiteturas Modernas](#solid-em-arquiteturas-modernas)
+    - [Hexagonal Architecture (Ports \& Adapters)](#hexagonal-architecture-ports--adapters)
+    - [Microservices](#microservices)
+    - [Clean Architecture / Onion Architecture](#clean-architecture--onion-architecture)
+    - [Event-Driven Architecture](#event-driven-architecture)
   - [Relação entre os Princípios](#relação-entre-os-princípios)
   - [Diretrizes para Code Review assistido por AI](#diretrizes-para-code-review-assistido-por-ai)
+    - [Regras de detecção automática](#regras-de-detecção-automática)
+    - [Níveis de severidade](#níveis-de-severidade)
+    - [Formato de sugestão](#formato-de-sugestão)
+    - [Priorização](#priorização)
   - [Referências](#referências)
 
 ---
@@ -787,6 +849,11 @@ Valores de referência para orientar decisões (não são regras rígidas):
 | Feature envy                   | SRP              | Mova o comportamento para quem possui os dados |
 | Refused bequest                | LSP              | Repense a hierarquia de herança               |
 | Parallel class hierarchies     | OCP + DIP        | Unifique via composição e abstrações           |
+| Long parameter list (>4-5 params) | SRP + ISP     | Extraia Parameter Object; verifique se o método faz coisas demais |
+| Classe com nome genérico (Utils, Common, Base) | SRP | Identifique responsabilidades reais; renomeie ou separe |
+| Variáveis globais/singletons mutáveis | DIP       | Substitua por injeção de dependência           |
+| Testes com setup complexo (muitos mocks) | SRP + DIP | Classe tem dependências demais; separe responsabilidades |
+| Código duplicado entre subtipos | LSP + OCP       | Extraia para classe base ou composição via delegação |
 
 ### Checklist de revisão
 
@@ -848,6 +915,47 @@ Passos concretos para corrigir as violações mais comuns:
 
 ---
 
+## Tensões e Trade-offs entre Princípios
+
+Na prática, os princípios SOLID podem criar **tensões** entre si. Reconhecer essas tensões é fundamental para tomar decisões pragmáticas.
+
+| Tensão | Descrição | Como resolver |
+|--------|-----------|---------------|
+| **SRP vs. simplicidade** | Separar demais cria uma explosão de classes pequenas que dificulta navegação e compreensão do fluxo. | Aplique SRP quando houver **eixos de mudança reais**, não hipotéticos. Se dois conceitos sempre mudam juntos, podem ficar na mesma classe. |
+| **OCP vs. YAGNI** | Criar pontos de extensão para variações que talvez nunca aconteçam gera complexidade acidental. | Espere pelo **segundo caso concreto** de variação antes de abstrair. Abstrair na primeira vez é prematuro. |
+| **ISP vs. coesão** | Segregar interfaces ao extremo (1 método cada) pode fragmentar contratos que semanticamente pertencem juntos. | Agrupe métodos que o **mesmo cliente usa junto**. A granularidade deve refletir a necessidade real do consumidor, não atomicidade artificial. |
+| **DIP vs. simplicidade** | Criar interfaces para toda dependência (incluindo estáveis) adiciona camadas de indireção sem valor. | Aplique DIP apenas nas **fronteiras voláteis** — onde a implementação pode mudar (banco, serviço externo, I/O). Dependências estáveis (String, List, utilitários puros) não precisam de abstração. |
+| **LSP vs. reuso** | Herdar para reaproveitar código sem relação semântica "é-um" leva a subtipos que não respeitam o contrato. | Prefira **composição para reuso** e **herança apenas para polimorfismo** com contrato semântico real. |
+| **SRP + ISP vs. DIP** | Segregar demais pode multiplicar interfaces a ponto de dificultar a configuração do container de DI. | Balance o número de abstrações com a complexidade de composição. Um facade pode unir role interfaces quando necessário. |
+
+> **Princípio meta:** Quando princípios entram em conflito, priorize **clareza e testabilidade**. Se a aplicação de um princípio torna o código mais difícil de entender ou testar, reconsidere.
+
+### Árvore de decisão rápida
+
+```
+Nova funcionalidade ou refatoração?
+│
+├── Código em classe com múltiplos atores?
+│   └── SIM → Aplique SRP (separar por ator)
+│
+├── Nova variação de comportamento?
+│   ├── É o 2º+ caso de variação → Aplique OCP (polimorfismo/Strategy)
+│   └── É o 1º caso → Implemente direto (YAGNI); marque como candidato a abstração futura
+│
+├── Hierarquia de herança com subtipo problemático?
+│   └── SIM → Valide LSP (contrato); considere composição
+│
+├── Interface grande com implementações parciais?
+│   └── SIM → Aplique ISP (segregar por role/cliente)
+│
+├── Lógica de negócio depende de infraestrutura?
+│   └── SIM → Aplique DIP (extrair interface no domínio + injetar)
+│
+└── Nenhum sinal claro → Mantenha simples; reavalie no próximo ciclo de mudança
+```
+
+---
+
 ## SOLID em Arquiteturas Modernas
 
 Os princípios SOLID transcendem classes e se aplicam a **módulos, serviços e componentes** em arquiteturas modernas:
@@ -888,6 +996,61 @@ Os princípios SOLID transcendem classes e se aplicam a **módulos, serviços e 
 | **SRP** | Cada handler de evento é responsável por uma reação a um evento específico |
 | **OCP** | Novos handlers podem reagir a eventos existentes sem alterar produtores |
 | **DIP** | Produtores não conhecem consumidores — ambos dependem do contrato do evento |
+
+---
+
+## SOLID além de OOP — Aplicação em Paradigma Funcional
+
+SOLID foi concebido no contexto de OOP, mas os **princípios subjacentes** se traduzem para programação funcional. A tabela abaixo mapeia cada princípio para seu equivalente funcional:
+
+| Princípio | Equivalente funcional | Explicação |
+|-----------|----------------------|------------|
+| **SRP** | **Funções puras e pequenas** | Cada função faz uma única transformação. Módulos/namespaces agrupam funções que mudam pelo mesmo motivo. |
+| **OCP** | **Higher-order functions + composição** | Em vez de modificar uma função existente, passe comportamento novo via funções de alta ordem (map, filter, reduce customizados). Pipelines de composição permitem extensão sem modificação. |
+| **LSP** | **Contratos de tipos / type classes** | Funções que operam sobre um tipo genérico (typeclass, protocol, trait) esperam que toda instância respeite as leis algébricas (identidade, associatividade, etc.). Equivalente direto do LSP. |
+| **ISP** | **Parâmetros mínimos + tipagem estrutural** | Funções recebem apenas os dados que precisam (destructuring mínimo), não uma estrutura inteira. Em linguagens com row types ou structural typing, o consumidor define exatamente o shape que precisa. |
+| **DIP** | **Injeção via parâmetros / Reader Monad** | Em vez de uma função importar diretamente um módulo de infraestrutura, ela recebe dependências como parâmetros (funções ou records de funções). O Reader Monad formaliza esse padrão. |
+
+### Exemplo funcional: DIP via higher-order function
+
+```
+// ANTES — Acoplado: a função importa o módulo de banco diretamente
+processOrder(order):
+    db.save(order)              // ← dependência direta
+    email.send(order.customer)  // ← dependência direta
+
+// DEPOIS — Desacoplado: dependências injetadas como parâmetros
+processOrder(order, saveFn, notifyFn):
+    saveFn(order)
+    notifyFn(order.customer)
+
+// Uso em produção:
+processOrder(order, db.save, email.send)
+
+// Uso em testes:
+processOrder(order, inMemorySave, noopNotify)
+```
+
+### Exemplo funcional: OCP via composição de funções
+
+```
+// Extensão sem modificação — adicionar validações via composição
+validate = compose(
+    validateEmail,
+    validateAge,
+    validateName
+)
+
+// Estender: adicionar nova regra sem alterar as existentes
+validateExtended = compose(
+    validatePhone,    // ← NOVA — sem tocar nas existentes
+    validateEmail,
+    validateAge,
+    validateName
+)
+```
+
+> **Insight:** O paradigma funcional naturalmente favorece muitos princípios SOLID — imutabilidade elimina problemas de estado compartilhado (LSP), funções pequenas promovem SRP, e higher-order functions viabilizam OCP e DIP sem necessidade de classes/interfaces.
 
 ---
 
@@ -969,6 +1132,12 @@ Ao revisar código, o assistente deve aplicar estas regras de detecção:
 | 10 | **Import de módulo de infraestrutura** dentro de módulo de domínio/negócio | DIP | Alertar inversão de dependência; abstração deve estar no domínio |
 | 11 | **Mais de 5 dependências injetadas** no construtor | SRP | Sugerir que a classe tem responsabilidades demais |
 | 12 | **Testes requerem infraestrutura real** (banco, rede, filesystem) para executar | DIP | Sugerir abstração de dependências externas e uso de mocks/stubs |
+| 13 | **Classe estática / singleton mutável** usado como dependência global | DIP | Sugerir substituição por injeção de dependência; singletons mutáveis dificultam testes e escondem acoplamento |
+| 14 | **Método com mais de 4-5 parâmetros** de tipos diferentes | SRP + ISP | Sugerir extração de Parameter Object ou verificar se o método faz coisas demais |
+| 15 | **Herança com mais de 3 níveis** de profundidade | LSP | Alertar que hierarquias profundas aumentam risco de violação de contratos; sugerir achatar com composição |
+| 16 | **Classe abstrata com lógica concreta** significativa (>50% do código) | SRP + LSP | Questionar se a motivação é reuso ou polimorfismo; sugerir extração para classe colaboradora |
+| 17 | **Enum com comportamento** (switch em enum para decidir lógica) em vez de polimorfismo | OCP | Sugerir substituição por Strategy ou mapa de comportamentos |
+| 18 | **Retorno de null** em método que deveria cumprir contrato | LSP | Sugerir Optional/Maybe, Null Object Pattern ou exceção explícita |
 
 ### Níveis de severidade
 
@@ -1004,17 +1173,100 @@ Quando múltiplas violações coexistem, priorize nesta ordem:
 
 > **Princípio geral:** Ataque primeiro o que **desbloqueia testabilidade** e depois o que **previne deterioração futura**.
 
+### Exemplos de feedback estruturado
+
+Exemplos concretos de como o assistente deve formatar sugestões em code review:
+
+**Exemplo 1 — God Class (SRP + DIP)**
+
+```
+**Princípio violado:** SRP + DIP
+**Severidade:** Crítico
+**Problema:** `OrderService` (480 linhas) acumula validação, cálculo de frete,
+persistência e envio de notificação. Instancia `MySQLRepository` e `SmtpMailer` diretamente.
+**Impacto:** Impossível testar lógica de negócio sem banco e SMTP reais.
+Mudança no cálculo de frete pode quebrar notificação inadvertidamente.
+**Sugestão:**
+1. Extrair `FreightCalculator`, `OrderValidator`, `OrderNotifier` (SRP — Receita 1)
+2. Criar interfaces `OrderRepository`, `Notifier` no domínio (DIP — Receita 5)
+3. Injetar via construtor
+**Exemplo:**
+    class OrderService(repo: OrderRepository, freight: FreightCalculator, notifier: Notifier):
+        createOrder(order):
+            OrderValidator.validate(order)
+            order.freight = freight.calculate(order)
+            repo.save(order)
+            notifier.notify(order.customer, "Pedido criado!")
+```
+
+**Exemplo 2 — Switch sobre tipo (OCP)**
+
+```
+**Princípio violado:** OCP
+**Severidade:** Alto
+**Problema:** `NotificationService.send()` contém switch com 6 cases (email, sms,
+push, slack, teams, webhook) que cresce a cada novo canal.
+**Impacto:** Todo novo canal exige modificar classe existente; risco de regressão alto.
+**Sugestão:**
+1. Extrair interface `NotificationChannel` com método `send(recipient, message)` (Receita 2)
+2. Cada canal vira uma implementação: `EmailChannel`, `SmsChannel`, etc.
+3. Injetar lista de canais ou usar Registry pattern
+**Exemplo:**
+    interface NotificationChannel:
+        send(recipient, message)
+        supports(channelType): boolean
+
+    class NotificationService(channels: List<NotificationChannel>):
+        send(recipient, message, channelType):
+            channel = channels.find(c -> c.supports(channelType))
+            channel.send(recipient, message)
+```
+
+---
+
+## Perguntas Frequentes (FAQ)
+
+> Perguntas recorrentes sobre SOLID, formatadas para consulta rápida por humanos e AI.
+
+**P: SOLID se aplica apenas a orientação a objetos?**
+R: Não. Os **princípios subjacentes** (coesão, desacoplamento, substituibilidade, contratos mínimos, inversão de dependência) transcendem paradigmas. Em FP, manifestam-se via funções puras, composição, higher-order functions e tipagem. Veja a seção [SOLID além de OOP](#solid-além-de-oop--aplicação-em-paradigma-funcional).
+
+**P: Devo aplicar todos os 5 princípios simultaneamente em todo código?**
+R: Não. SOLID são **heurísticas direcionais**, não regras absolutas. Aplique o princípio relevante quando houver indício claro de problema (code smell) ou quando o contexto exigir. Protótipos, scripts e código descartável podem ser pragmaticamente simples. Veja [Quando não aplicar](#quando-não-aplicar-pragmatismo).
+
+**P: Qual é a diferença entre DIP e DI (Dependency Injection)?**
+R: **DIP** é um *princípio de design*: "dependa de abstrações, não de concretizações". **DI** é uma *técnica de implementação*: fornecer dependências externamente via construtor, setter ou framework. DI é uma das formas de implementar DIP, mas não a única (higher-order functions em FP também implementam DIP).
+
+**P: Como sei quando uma classe viola SRP vs. ISP?**
+R: Perspectiva do **implementador** → SRP: "esta classe tem múltiplos motivos para mudar?" Perspectiva do **consumidor** → ISP: "o cliente usa todos os métodos desta interface?" Ambas podem coexistir: uma God Class (SRP) frequentemente expõe uma God Interface (ISP).
+
+**P: Interface com uma única implementação viola YAGNI?**
+R: Depende. Se a interface existe apenas "por precaução" sem variação real prevista, sim, é overhead (YAGNI). Se existe para **definir fronteira arquitetural** (ex: `OrderRepository` no domínio, implementado por `MySQLOrderRepository` na infra), é DIP legítimo — mesmo com uma única implementação. O critério é: a abstração **protege uma fronteira volátil**?
+
+**P: Como SOLID se relaciona com Clean Architecture?**
+R: Clean Architecture é uma **aplicação arquitetural** dos princípios SOLID em larga escala. A Regra de Dependência (dependências apontam para dentro) é DIP aplicado entre camadas. Cada camada respeita SRP. Use Cases são OCP (novos use cases estendem o sistema). Veja [Clean Architecture / Onion Architecture](#clean-architecture--onion-architecture).
+
+**P: Posso aplicar SOLID em código legado sem reescrever tudo?**
+R: Sim. A abordagem recomendada é **incremental**: identifique os pontos de maior dor (classes que mudam frequentemente, módulos impossíveis de testar), aplique as [receitas de refatoração](#receitas-de-refatoração) uma por vez, e escreva testes antes de refatorar. Priorize DIP primeiro (habilita testabilidade) e SRP em seguida (reduz escopo de risco).
+
+**P: "Composition over inheritance" significa nunca usar herança?**
+R: Não. Herança é apropriada quando existe relação semântica "é-um" genuína no contexto do software (não apenas no mundo real) E o subtipo respeita o contrato do tipo base (LSP). Use composição quando o objetivo for **reuso de comportamento** sem relação semântica de subtipagem.
+
 ---
 
 ## Referências
 
-| Recurso                                                    | Autor                | Tipo      |
-|------------------------------------------------------------|----------------------|-----------|
-| *Agile Software Development: Principles, Patterns, and Practices* | Robert C. Martin | Livro     |
-| *Clean Architecture: A Craftsman's Guide to Software Structure and Design* | Robert C. Martin | Livro |
-| *Object-Oriented Software Construction*                    | Bertrand Meyer       | Livro     |
-| *A Behavioral Notion of Subtyping* (1994)                  | Barbara Liskov, Jeannette Wing | Paper |
-| *Design Principles and Design Patterns* (2000)             | Robert C. Martin     | Paper     |
-| *The Pragmatic Programmer*                                 | Hunt & Thomas        | Livro     |
-| *Refactoring: Improving the Design of Existing Code*       | Martin Fowler        | Livro     |
-| *Head First Design Patterns*                               | Freeman & Robson     | Livro     |
+| Recurso                                                    | Autor                | Tipo      | Relevância SOLID |
+|------------------------------------------------------------|----------------------|-----------|------------------|
+| *Agile Software Development: Principles, Patterns, and Practices* | Robert C. Martin | Livro | Definição original dos 5 princípios |
+| *Clean Architecture: A Craftsman's Guide to Software Structure and Design* | Robert C. Martin | Livro | SRP reformulado; SOLID em escala arquitetural |
+| *Object-Oriented Software Construction*                    | Bertrand Meyer       | Livro     | OCP original; Design by Contract |
+| *A Behavioral Notion of Subtyping* (1994)                  | Barbara Liskov, Jeannette Wing | Paper | Formalização do LSP |
+| *Design Principles and Design Patterns* (2000)             | Robert C. Martin     | Paper     | Paper seminal que articula os 5 princípios |
+| *The Pragmatic Programmer*                                 | Hunt & Thomas        | Livro     | Pragmatismo e trade-offs em design |
+| *Refactoring: Improving the Design of Existing Code* (2ª ed.) | Martin Fowler     | Livro     | Receitas de refatoração aplicáveis |
+| *Head First Design Patterns*                               | Freeman & Robson     | Livro     | Patterns que implementam OCP, DIP |
+| *Effective Java* (3ª ed.)                                  | Joshua Bloch         | Livro     | ISP e LSP em contexto Java |
+| *Domain-Driven Design: Tackling Complexity in the Heart of Software* | Eric Evans    | Livro     | SRP e DIP em design de domínio |
+| *Working Effectively with Legacy Code*                     | Michael Feathers     | Livro     | SOLID incremental em código legado |
+| *Implementing Domain-Driven Design*                        | Vaughn Vernon        | Livro     | DIP e SRP em arquitetura hexagonal |

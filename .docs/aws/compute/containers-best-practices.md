@@ -550,6 +550,262 @@ resource "aws_codedeploy_deployment_group" "main" {
 
 ---
 
+## Amazon EKS (Elastic Kubernetes Service)
+
+### Cluster Configuration
+
+```hcl
+# EKS Cluster
+resource "aws_eks_cluster" "main" {
+  name     = "${var.project}-${var.environment}"
+  role_arn = aws_iam_role.eks_cluster.arn
+  version  = "1.31"
+
+  vpc_config {
+    subnet_ids              = var.private_subnet_ids
+    endpoint_private_access = true
+    endpoint_public_access  = var.environment != "prod"  # Apenas private em prod
+    security_group_ids      = [aws_security_group.eks_cluster.id]
+  }
+
+  encryption_config {
+    provider {
+      key_arn = aws_kms_key.eks.arn
+    }
+    resources = ["secrets"]
+  }
+
+  enabled_cluster_log_types = [
+    "api", "audit", "authenticator", "controllerManager", "scheduler"
+  ]
+
+  access_config {
+    authentication_mode                         = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions  = false
+  }
+
+  tags = var.tags
+
+  depends_on = [
+    aws_iam_role_policy_attachment.eks_cluster_policy,
+    aws_iam_role_policy_attachment.eks_vpc_resource_controller,
+  ]
+}
+
+# Managed Node Group (Graviton)
+resource "aws_eks_node_group" "main" {
+  cluster_name    = aws_eks_cluster.main.name
+  node_group_name = "${var.project}-main"
+  node_role_arn   = aws_iam_role.eks_node.arn
+  subnet_ids      = var.private_subnet_ids
+  ami_type        = "AL2023_ARM_64_STANDARD"  # Graviton (ARM64)
+
+  instance_types = ["m7g.large"]
+  capacity_type  = "ON_DEMAND"  # Usar SPOT para workloads tolerantes
+
+  scaling_config {
+    desired_size = 3
+    min_size     = 2
+    max_size     = 10
+  }
+
+  update_config {
+    max_unavailable = 1
+  }
+
+  labels = {
+    environment = var.environment
+    workload    = "general"
+  }
+
+  tags = var.tags
+
+  depends_on = [
+    aws_iam_role_policy_attachment.eks_worker_node_policy,
+    aws_iam_role_policy_attachment.eks_cni_policy,
+    aws_iam_role_policy_attachment.eks_container_registry_readonly,
+  ]
+}
+
+# Node Group para Spot Instances (workloads tolerantes)
+resource "aws_eks_node_group" "spot" {
+  cluster_name    = aws_eks_cluster.main.name
+  node_group_name = "${var.project}-spot"
+  node_role_arn   = aws_iam_role.eks_node.arn
+  subnet_ids      = var.private_subnet_ids
+  ami_type        = "AL2023_ARM_64_STANDARD"
+
+  instance_types = ["m7g.large", "m7g.xlarge", "m6g.large", "m6g.xlarge"]  # Diversificar para Spot
+  capacity_type  = "SPOT"
+
+  scaling_config {
+    desired_size = 2
+    min_size     = 0
+    max_size     = 20
+  }
+
+  taint {
+    key    = "spot"
+    value  = "true"
+    effect = "NO_SCHEDULE"
+  }
+
+  labels = {
+    capacity = "spot"
+  }
+}
+```
+
+### IRSA (IAM Roles for Service Accounts)
+
+```hcl
+# OIDC Provider para IRSA
+data "tls_certificate" "eks" {
+  url = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+  url             = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+
+# IAM Role para Service Account (ex: app que acessa S3)
+resource "aws_iam_role" "app_irsa" {
+  name = "${var.project}-app-irsa"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Effect = "Allow"
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.eks.arn
+      }
+      Condition = {
+        StringEquals = {
+          "${replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")}:sub" = "system:serviceaccount:${var.namespace}:${var.service_account_name}"
+          "${replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")}:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+}
+
+# Kubernetes Service Account annotation
+# kubectl annotate serviceaccount app-sa \
+#   eks.amazonaws.com/role-arn=arn:aws:iam::ACCOUNT:role/PROJECT-app-irsa
+```
+
+### EKS Add-ons Essenciais
+
+```hcl
+# VPC CNI — networking
+resource "aws_eks_addon" "vpc_cni" {
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "vpc-cni"
+  resolve_conflicts_on_update = "OVERWRITE"
+}
+
+# CoreDNS
+resource "aws_eks_addon" "coredns" {
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "coredns"
+  resolve_conflicts_on_update = "OVERWRITE"
+}
+
+# kube-proxy
+resource "aws_eks_addon" "kube_proxy" {
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "kube-proxy"
+  resolve_conflicts_on_update = "OVERWRITE"
+}
+
+# EBS CSI Driver (persistent volumes)
+resource "aws_eks_addon" "ebs_csi" {
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "aws-ebs-csi-driver"
+  service_account_role_arn    = aws_iam_role.ebs_csi.arn
+  resolve_conflicts_on_update = "OVERWRITE"
+}
+
+# ADOT Collector (observability)
+resource "aws_eks_addon" "adot" {
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "adot"
+  service_account_role_arn    = aws_iam_role.adot.arn
+  resolve_conflicts_on_update = "OVERWRITE"
+}
+```
+
+### Karpenter (Auto Scaling Recomendado)
+
+```yaml
+# Karpenter NodePool — substitui Cluster Autoscaler
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: default
+spec:
+  template:
+    spec:
+      requirements:
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["arm64"]           # Graviton
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["on-demand", "spot"]
+        - key: karpenter.k8s.aws/instance-family
+          operator: In
+          values: ["m7g", "m6g", "c7g", "c6g"]
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: default
+  limits:
+    cpu: "100"
+    memory: 400Gi
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 30s
+---
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  amiSelectorTerms:
+    - alias: al2023@latest
+  subnetSelectorTerms:
+    - tags:
+        kubernetes.io/role/internal-elb: "1"
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: ${CLUSTER_NAME}
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 80Gi
+        volumeType: gp3
+        encrypted: true
+```
+
+### EKS Security Best Practices
+
+| Prática | Implementação |
+|---------|---------------|
+| IRSA | `eks.amazonaws.com/role-arn` annotation em Service Accounts |
+| Pod Security Standards | Usar `PodSecurity` admission controller (Restricted) |
+| Network Policies | Calico ou VPC CNI Network Policy |
+| Secrets encryption | KMS encryption no etcd |
+| Private endpoint | `endpoint_public_access = false` em prod |
+| Audit logging | `enabled_cluster_log_types = ["audit"]` |
+| Image scanning | ECR scanning + admission controller (OPA/Kyverno) |
+| Least privilege nodes | Minimal IAM role para node groups |
+
+---
+
 ## Container Security Checklist
 
 - [ ] Imagens base oficiais e atualizadas
