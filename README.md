@@ -40,6 +40,13 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   │   └── storage-best-practices.md
 │   └── governance/
 │       └── multi-account-strategy.md
+├── data-engineering/            # Data Engineering & Architecture (AWS)
+│   ├── 01-data-architecture-foundations.md
+│   ├── 02-data-storage.md
+│   ├── 03-data-processing.md
+│   ├── 04-data-integration.md
+│   ├── 05-data-governance.md
+│   └── 06-architecture-patterns.md
 ├── ddd/                        # Domain-Driven Design
 │   ├── 01-strategic-design.md
 │   ├── 02-tactical-design.md
@@ -185,6 +192,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 |-------|-----------|
 | **API** | Boas práticas para design de APIs REST, GraphQL e gRPC |
 | **AWS** | Well-Architected, Serverless, Security, Networking, Containers, Databases, Observability, Cost Optimization, CI/CD, Disaster Recovery, Storage, Multi-Account |
+| **Data Engineering** | Data Engineering & Architecture na AWS — Fundamentos, Storage (S3/Redshift/DynamoDB/Aurora), Processing (Glue/EMR/Kinesis/MSK), Integração (CDC/DMS/EventBridge), Governance (Lake Formation/DataZone/Quality) e Arquiteturas de Referência |
 | **DDD** | Domain-Driven Design — Strategic Design, Tactical Design (Building Blocks), Context Mapping, Anti-Patterns e Integração com Arquiteturas |
 | **Design Patterns** | Padrões criacionais, estruturais, comportamentais e arquiteturais |
 | **Java** | Estrutura de projetos para Spring Boot, Quarkus e Micronaut |
@@ -208,6 +216,7 @@ Cada guia de tecnologia (`project-structure.md`) já contém instruções para o
 | Go (Gin) | `.docs/golang/gin/project-structure.md` |
 | Terraform (AWS) | `.docs/terraform/aws/` |
 | AWS (Best Practices) | `.docs/aws/` |
+| Data Engineering (AWS) | `.docs/data-engineering/` |
 | DDD | `.docs/ddd/` |
 | K8s | `.docs/k8s/` |
 | Quality Engineering | `.docs/quality-engineering/` |
