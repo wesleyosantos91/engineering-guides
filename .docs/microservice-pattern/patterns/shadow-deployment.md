@@ -1,7 +1,8 @@
 # Shadow Deployment (Dark Launch / Traffic Mirroring)
 
-> **Categoria:** Modernização e Deploy Progressivo
+> **Categoria:** Estratégias de Modernização e Deploy
 > **Complementa:** Canary Release, Blue-Green Deploy, Strangler Fig
+> **Keywords:** shadow deployment, dark launch, traffic mirroring, espelhamento de tráfego, teste em produção, validação silenciosa
 
 ---
 

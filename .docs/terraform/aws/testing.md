@@ -61,7 +61,7 @@
 
 ## Terraform Test — Testes Unitários Nativos
 
-> Disponível a partir do **Terraform 1.6+**. Recomendado como primeira escolha.
+> Disponível a partir do **Terraform 1.6+** (mocks de providers a partir do 1.7+). Recomendado como primeira escolha.
 
 ### Estrutura de Arquivos
 
@@ -869,7 +869,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.7.0"
+          terraform_version: "1.10.0"
 
       - name: Format Check
         run: terraform fmt -check -recursive
@@ -912,7 +912,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.7.0"
+          terraform_version: "1.10.0"
 
       - name: Run Unit Tests
         run: |
@@ -942,7 +942,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.7.0"
+          terraform_version: "1.10.0"
 
       - name: Run Integration Tests
         run: |

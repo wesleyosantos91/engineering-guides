@@ -1,8 +1,9 @@
 # Feature Flags (Feature Toggles)
 
-> **Categoria:** Modernização e Deploy Progressivo
+> **Categoria:** Estratégias de Modernização e Deploy
 > **Origem:** Martin Fowler, Pete Hodgson
 > **Complementa:** Canary Release, Blue-Green Deploy, Configuração Externa
+> **Keywords:** feature flags, feature toggles, release toggles, trunk-based development, deploy desacoplado, ativação gradual
 
 ---
 

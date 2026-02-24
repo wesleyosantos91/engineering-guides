@@ -2,6 +2,7 @@
 
 > **Categoria:** Persistência e Processamento de Dados
 > **Complementa:** Retry, Idempotência, Saga
+> **Keywords:** DLQ, Dead Letter Queue, fila de mensagens mortas, reprocessamento, tratamento de erros, mensagens com falha
 
 ---
 

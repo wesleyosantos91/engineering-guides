@@ -2,6 +2,7 @@
 
 > **Categoria:** Infraestrutura e Deploy
 > **Complementa:** Service Discovery, API Gateway, Observabilidade
+> **Keywords:** sidecar, service mesh, proxy, cross-cutting concerns, infraestrutura desacoplada, Envoy
 
 ---
 

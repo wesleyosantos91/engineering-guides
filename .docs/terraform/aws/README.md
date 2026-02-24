@@ -15,11 +15,11 @@
 | Documento | Descrição |
 |-----------|-----------|
 | [project-structure.md](project-structure.md) | Estrutura de diretórios, organização de módulos e workspaces |
-| [best-practices.md](best-practices.md) | Boas práticas gerais de Terraform com foco em AWS |
+| [best-practices.md](best-practices.md) | Boas práticas gerais, check blocks, ephemeral values, provider functions |
 | [testing.md](testing.md) | Testes unitários, de integração, contract tests e compliance |
 | [modules.md](modules.md) | Criação, versionamento e consumo de módulos reutilizáveis |
-| [state-management.md](state-management.md) | Gerenciamento de state — backends, locking, isolation |
-| [security.md](security.md) | Segurança, IAM, secrets, scanning e compliance na AWS |
+| [state-management.md](state-management.md) | Gerenciamento de state — backends, native S3 locking, isolation |
+| [security.md](security.md) | Segurança, IAM, secrets, ephemeral values, scanning e compliance na AWS |
 
 ---
 
@@ -28,7 +28,7 @@
 | Categoria | Ferramenta |
 |-----------|-----------|
 | **IaC** | Terraform 1.10+ (OpenTofu 1.8+ como alternativa) |
-| **Provider** | AWS Provider (`hashicorp/aws`) 5.x+ |
+| **Provider** | AWS Provider (`hashicorp/aws`) 5.x+ (com provider-defined functions 5.40+) |
 | **State Backend** | S3 com native locking (`use_lockfile = true`) — DynamoDB apenas para projetos legados |
 | **Módulos** | Terraform Registry + módulos internos |
 | **Testes Unitários** | `terraform test` (nativo 1.6+, mocks 1.7+, provider mocking 1.8+) |
@@ -73,7 +73,10 @@ Ao gerar código Terraform para AWS, sempre:
 - Inclua `lifecycle` blocks quando apropriado (`prevent_destroy` em recursos críticos)
 - Prefira `moved` blocks em vez de destroy+create ao refatorar
 - Use `terraform_data` ao invés de `null_resource`
+- Use `removed` blocks para remover recursos do gerenciamento sem destruí-los
 - Sempre use `check` blocks para validações pós-apply de aspectos críticos
+- Use `ephemeral` values (1.10+) para secrets que não devem persistir no state
+- Use provider-defined functions (`provider::aws::arn_parse`) para manipulação de ARNs
 - Garanta encryption at rest e in transit por padrão em todos os serviços
 
 ---

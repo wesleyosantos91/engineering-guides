@@ -115,8 +115,8 @@ Event Store = Log append-only de eventos
   │ global_pos   │ BIGSERIAL│ posição global         │
   └──────────────┴──────────┴────────────────────────┘
   
-  Índicesresses: (aggregate_id, version) — unique
-                   global_pos — para projections
+  Índices: (aggregate_id, version) — unique
+            global_pos — para projections
 ```
 
 ### Reconstrução de Estado (Replay)

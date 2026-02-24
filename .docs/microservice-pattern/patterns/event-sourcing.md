@@ -1,8 +1,9 @@
 # Event Sourcing
 
-> **Categoria:** Event-Driven e Mensageria
+> **Categoria:** Event-Driven e Escalabilidade
 > **Origem:** Martin Fowler, Greg Young
 > **Complementa:** CQRS, Outbox Pattern, Saga
+> **Keywords:** event sourcing, armazenamento de eventos, event store, replay, audit trail, estado derivado, imutabilidade
 
 ---
 

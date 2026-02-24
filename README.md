@@ -14,7 +14,25 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   │   └── grpc-best-practices.md
 │   └── rest/
 │       └── rest-best-practices.md
-├── aws/                        # AWS (em construção)
+├── aws/                        # AWS Best Practices & Well-Architected
+│   ├── README.md
+│   ├── well-architected-framework.md
+│   ├── serverless/
+│   │   ├── serverless-best-practices.md
+│   │   └── serverless-patterns.md
+│   ├── security/
+│   │   ├── security-best-practices.md
+│   │   └── compliance-checklist.md
+│   ├── networking/
+│   │   └── networking-best-practices.md
+│   ├── compute/
+│   │   └── containers-best-practices.md
+│   ├── databases/
+│   │   └── databases-best-practices.md
+│   ├── observability/
+│   │   └── observability-best-practices.md
+│   └── cost-optimization/
+│       └── cost-optimization-guide.md
 ├── design-patterns/            # Design Patterns (agnóstico a linguagem)
 │   ├── README.md
 │   ├── architectural-patterns.md
@@ -124,6 +142,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 | Seção | Descrição |
 |-------|-----------|
 | **API** | Boas práticas para design de APIs REST, GraphQL e gRPC |
+| **AWS** | Well-Architected, Serverless, Security, Networking, Containers, Databases, Observability, Cost Optimization |
 | **Design Patterns** | Padrões criacionais, estruturais, comportamentais e arquiteturais |
 | **Java** | Estrutura de projetos para Spring Boot, Quarkus e Micronaut |
 | **Go** | Estrutura de projetos com Gin |
@@ -144,3 +163,4 @@ Cada guia de tecnologia (`project-structure.md`) já contém instruções para o
 | Micronaut | `.docs/java/micronaut/project-structure.md` |
 | Go (Gin) | `.docs/golang/gin/project-structure.md` |
 | Terraform (AWS) | `.docs/terraform/aws/` |
+| AWS (Best Practices) | `.docs/aws/` |

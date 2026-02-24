@@ -57,7 +57,7 @@ Connections:
 
 Storage:
   Avg message: 100 bytes
-  100B × 100B = 10 TB/dia (texto only)
+  100B msgs × 100 bytes = 10 TB/dia (texto only)
   Com mídia: muito mais → S3/CDN
 
   Cassandra storage: 10 TB/dia × 30 dias = 300 TB

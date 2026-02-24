@@ -16,12 +16,15 @@
   - [Service-Linked Roles](#service-linked-roles)
   - [Cross-Account Access](#cross-account-access)
 - [Secrets Management](#secrets-management)
+- [Ephemeral Values para Secrets](#ephemeral-values-para-secrets)
 - [Encryption](#encryption)
 - [Networking Seguro](#networking-seguro)
 - [Security Scanning Pipeline](#security-scanning-pipeline)
 - [Compliance as Code](#compliance-as-code)
 - [AWS Config Rules](#aws-config-rules)
 - [GuardDuty e Security Hub](#guardduty-e-security-hub)
+- [CloudTrail](#cloudtrail)
+- [Service Control Policies (SCPs)](#service-control-policies-scps)
 - [Checklist de Segurança por Serviço](#checklist-de-segurança-por-serviço)
 - [Incident Response — Terraform](#incident-response--terraform)
 
@@ -307,6 +310,50 @@ resource "aws_ecs_task_definition" "app" {
   ])
 }
 ```
+
+---
+
+## Ephemeral Values para Secrets
+
+> Disponível a partir do **Terraform 1.10+**. Valores efêmeros NÃO são persistidos no state.
+
+O state do Terraform armazena todos os valores em plain text JSON, incluindo secrets marcados como `sensitive`.
+Ephemeral values resolvem isso eliminando a persistência no state.
+
+### Ephemeral Resources — Ler Secrets sem State
+
+```hcl
+# Lê secret do Secrets Manager em runtime, SEM armazenar no state
+ephemeral "aws_secretsmanager_secret_version" "db_password" {
+  secret_id = aws_secretsmanager_secret.db_password.id
+}
+
+resource "aws_db_instance" "main" {
+  # ...
+  password = ephemeral.aws_secretsmanager_secret_version.db_password.secret_string
+}
+```
+
+### Ephemeral Variables
+
+```hcl
+# Variável efêmera — valor nunca aparece no state ou plan output
+ephemeral "variable" "api_key" {
+  description = "External API key"
+  type        = string
+}
+```
+
+### Quando Usar
+
+| Abordagem | No State? | Uso |
+|-----------|-----------|-----|
+| `variable` com `sensitive = true` | ❗ SIM, está no state | Valores que podem ficar no state (encriptado) |
+| `ephemeral variable` | ✅ NÃO | Secrets que não devem existir no state |
+| `ephemeral resource` | ✅ NÃO | Leitura de secrets em runtime |
+
+> **Regra:** Para novos projetos (Terraform 1.10+), prefira `ephemeral` values para todos os secrets.
+> Isso elimina o risco de exposição via state file.
 
 ---
 
@@ -738,6 +785,166 @@ resource "aws_securityhub_standards_subscription" "aws_best_practices" {
   depends_on    = [aws_securityhub_account.main]
 }
 ```
+
+---
+
+## CloudTrail
+
+```hcl
+# CloudTrail — Auditoria de todas as chamadas de API
+resource "aws_cloudtrail" "main" {
+  name                          = "${local.name_prefix}-trail"
+  s3_bucket_name                = aws_s3_bucket.cloudtrail.id
+  include_global_service_events = true
+  is_multi_region_trail         = true
+  enable_log_file_validation    = true  # ✅ Garante integridade dos logs
+  kms_key_id                    = aws_kms_key.cloudtrail.arn
+
+  cloud_watch_logs_group_arn = "${aws_cloudwatch_log_group.cloudtrail.arn}:*"
+  cloud_watch_logs_role_arn  = aws_iam_role.cloudtrail_cloudwatch.arn
+
+  # Eventos de gerenciamento
+  event_selector {
+    read_write_type           = "All"
+    include_management_events = true
+
+    # Data events para S3
+    data_resource {
+      type   = "AWS::S3::Object"
+      values = ["arn:aws:s3"]
+    }
+
+    # Data events para Lambda
+    data_resource {
+      type   = "AWS::Lambda::Function"
+      values = ["arn:aws:lambda"]
+    }
+  }
+
+  tags = local.common_tags
+}
+
+resource "aws_cloudwatch_log_group" "cloudtrail" {
+  name              = "/aws/cloudtrail/${local.name_prefix}"
+  retention_in_days = 365  # Retenção de 1 ano para compliance
+  kms_key_id        = aws_kms_key.logs.arn
+
+  tags = local.common_tags
+}
+
+# S3 bucket para CloudTrail com policy obrigatória
+resource "aws_s3_bucket" "cloudtrail" {
+  bucket = "${local.name_prefix}-cloudtrail-logs"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  tags = local.common_tags
+}
+
+resource "aws_s3_bucket_policy" "cloudtrail" {
+  bucket = aws_s3_bucket.cloudtrail.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AWSCloudTrailAclCheck"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudtrail.amazonaws.com"
+        }
+        Action   = "s3:GetBucketAcl"
+        Resource = aws_s3_bucket.cloudtrail.arn
+      },
+      {
+        Sid    = "AWSCloudTrailWrite"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudtrail.amazonaws.com"
+        }
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.cloudtrail.arn}/AWSLogs/*"
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      }
+    ]
+  })
+}
+```
+
+> **Regra:** CloudTrail deve estar habilitado em TODAS as contas AWS.
+> Habilite multi-region, log file validation e encryption com KMS.
+
+---
+
+## Service Control Policies (SCPs)
+
+```hcl
+# SCP — Guardrails organizacionais que nenhuma role pode ultrapassar
+
+# Bloquear regiões não autorizadas
+resource "aws_organizations_policy" "restrict_regions" {
+  name = "restrict-regions"
+  type = "SERVICE_CONTROL_POLICY"
+
+  content = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "DenyUnapprovedRegions"
+        Effect    = "Deny"
+        Action    = "*"
+        Resource  = "*"
+        Condition = {
+          StringNotEquals = {
+            "aws:RequestedRegion" = ["us-east-1", "sa-east-1"]
+          }
+          # Excluir serviços globais
+          "ForAnyValue:StringNotLike" = {
+            "aws:PrincipalArn" = [
+              "arn:aws:iam::*:role/OrganizationAdmin"
+            ]
+          }
+        }
+      }
+    ]
+  })
+}
+
+# Bloquear desabilitação de GuardDuty e SecurityHub
+resource "aws_organizations_policy" "protect_security_services" {
+  name = "protect-security-services"
+  type = "SERVICE_CONTROL_POLICY"
+
+  content = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "DenyDisableSecurityServices"
+        Effect = "Deny"
+        Action = [
+          "guardduty:DeleteDetector",
+          "guardduty:DisassociateFromMasterAccount",
+          "securityhub:DisableSecurityHub",
+          "cloudtrail:StopLogging",
+          "cloudtrail:DeleteTrail",
+          "config:StopConfigurationRecorder",
+          "config:DeleteConfigurationRecorder",
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+```
+
+> **Regra:** Use SCPs para criar guardrails que nenhuma IAM policy pode contornar.
+> Proteja serviços de segurança (GuardDuty, CloudTrail, Config) contra desabilitação.
 
 ---
 

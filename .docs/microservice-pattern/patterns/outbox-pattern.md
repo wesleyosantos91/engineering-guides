@@ -1,7 +1,8 @@
 # Outbox Pattern
 
-> **Categoria:** Event-Driven e Mensageria
+> **Categoria:** Event-Driven e Escalabilidade
 > **Complementa:** Event Sourcing, Saga, CDC, Idempotência
+> **Keywords:** outbox pattern, transactional outbox, consistência eventual, dual write, publicação confiável, polling publisher
 
 ---
 

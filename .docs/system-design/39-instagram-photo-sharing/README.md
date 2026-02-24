@@ -356,6 +356,94 @@ CREATE TABLE likes (
 
 ---
 
+## Implementação Prática
+
+### Upload de Foto com Pre-signed URL (Python / FastAPI + S3)
+
+```python
+import boto3
+import uuid
+from fastapi import FastAPI, Depends
+
+app = FastAPI()
+s3 = boto3.client("s3")
+BUCKET = "instagram-media"
+
+@app.post("/posts/upload-url")
+async def generate_upload_url(user_id: int, content_type: str = "image/jpeg"):
+    """Gera uma pre-signed URL para upload direto ao S3."""
+    media_id = str(uuid.uuid4())
+    s3_key = f"photos/{user_id}/{media_id}"
+
+    presigned = s3.generate_presigned_url(
+        "put_object",
+        Params={"Bucket": BUCKET, "Key": s3_key, "ContentType": content_type},
+        ExpiresIn=300,  # 5 min
+    )
+    return {"upload_url": presigned, "s3_key": s3_key, "media_id": media_id}
+
+
+@app.post("/posts")
+async def create_post(user_id: int, caption: str, s3_keys: list[str]):
+    """Cria um post após upload das mídias concluído."""
+    post_id = snowflake_id()  # Snowflake ID generator
+
+    # 1. Inserir post no DB
+    db.execute(
+        "INSERT INTO posts (id, user_id, caption, created_at) VALUES (%s,%s,%s,NOW())",
+        (post_id, user_id, caption),
+    )
+    # 2. Inserir cada mídia
+    for i, key in enumerate(s3_keys):
+        db.execute(
+            "INSERT INTO post_media (id, post_id, s3_key, position) VALUES (%s,%s,%s,%s)",
+            (snowflake_id(), post_id, key, i),
+        )
+    # 3. Fan-out assíncrono: envia mensagem para gerar feed dos followers
+    sqs.send_message(QueueUrl=FANOUT_QUEUE, MessageBody=json.dumps({
+        "post_id": post_id, "user_id": user_id
+    }))
+    return {"post_id": post_id}
+```
+
+### Geração de Feed com Redis (Python)
+
+```python
+import redis
+
+r = redis.Redis()
+FEED_SIZE = 500
+
+def fanout_post(post_id: int, user_id: int):
+    """Worker: distribui post_id no feed de cada follower (fan-out on write)."""
+    followers = db.query("SELECT follower_id FROM follows WHERE followee_id = %s", (user_id,))
+    score = time.time()
+
+    pipe = r.pipeline()
+    for (follower_id,) in followers:
+        key = f"feed:{follower_id}"
+        pipe.zadd(key, {str(post_id): score})
+        pipe.zremrangebyrank(key, 0, -(FEED_SIZE + 1))
+    pipe.execute()
+
+
+def get_feed(user_id: int, offset: int = 0, limit: int = 20) -> list:
+    """Lê o feed pré-computado (sorted set) do Redis."""
+    post_ids = r.zrevrange(f"feed:{user_id}", offset, offset + limit - 1)
+    if not post_ids:
+        return []
+    # Buscar detalhes dos posts em batch
+    posts = db.query(
+        "SELECT p.*, pm.s3_key FROM posts p "
+        "JOIN post_media pm ON pm.post_id = p.id "
+        "WHERE p.id IN %s ORDER BY p.created_at DESC",
+        (tuple(int(pid) for pid in post_ids),),
+    )
+    return posts
+```
+
+---
+
 ## Trade-offs
 
 | Decisão | Opção A | Opção B | Instagram usa |

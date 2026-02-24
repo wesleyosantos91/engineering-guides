@@ -2,6 +2,7 @@
 
 > **Categoria:** Infraestrutura e Deploy
 > **Complementa:** Service Discovery, Circuit Breaker, Blue-Green Deploy
+> **Keywords:** health checks, liveness, readiness, startup probe, monitoramento, disponibilidade, auto-healing
 
 ---
 

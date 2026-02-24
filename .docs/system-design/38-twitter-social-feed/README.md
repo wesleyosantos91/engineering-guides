@@ -319,6 +319,82 @@ Quando user abre timeline → BUSCA tweets de quem segue em real-time
 
 ---
 
+## Implementação Prática
+
+### Fan-out on Write com Redis (Python)
+
+```python
+import redis
+import time
+
+r = redis.Redis()
+MAX_TIMELINE_SIZE = 800
+
+def post_tweet(user_id: int, tweet_id: int):
+    """Fan-out: insere tweet_id no timeline de cada follower."""
+    # 1. Salvar tweet no DB
+    tweet_data = {"user_id": user_id, "tweet_id": tweet_id, "ts": time.time()}
+    r.hset(f"tweet:{tweet_id}", mapping=tweet_data)
+
+    # 2. Buscar followers
+    followers = r.smembers(f"followers:{user_id}")
+
+    # 3. Fan-out: inserir no timeline (sorted set) de cada follower
+    for follower_id in followers:
+        timeline_key = f"timeline:{follower_id.decode()}"
+        r.zadd(timeline_key, {str(tweet_id): time.time()})
+        # Trim para não crescer indefinidamente
+        r.zremrangebyrank(timeline_key, 0, -(MAX_TIMELINE_SIZE + 1))
+
+def get_timeline(user_id: int, count: int = 20) -> list:
+    """Lê o timeline pré-computado do Redis."""
+    tweet_ids = r.zrevrange(f"timeline:{user_id}", 0, count - 1)
+    tweets = []
+    for tid in tweet_ids:
+        tweet = r.hgetall(f"tweet:{tid.decode()}")
+        if tweet:
+            tweets.append(tweet)
+    return tweets
+```
+
+### Snowflake ID Generator (Java)
+
+```java
+public class SnowflakeIdGenerator {
+    private static final long EPOCH = 1609459200000L; // 2021-01-01
+    private static final long MACHINE_BITS = 10;
+    private static final long SEQUENCE_BITS = 12;
+    private static final long MAX_SEQUENCE = (1L << SEQUENCE_BITS) - 1;
+
+    private final long machineId;
+    private long sequence = 0;
+    private long lastTimestamp = -1;
+
+    public SnowflakeIdGenerator(long machineId) {
+        this.machineId = machineId;
+    }
+
+    public synchronized long nextId() {
+        long timestamp = System.currentTimeMillis();
+        if (timestamp == lastTimestamp) {
+            sequence = (sequence + 1) & MAX_SEQUENCE;
+            if (sequence == 0) {
+                while (timestamp <= lastTimestamp)
+                    timestamp = System.currentTimeMillis();
+            }
+        } else {
+            sequence = 0;
+        }
+        lastTimestamp = timestamp;
+        return ((timestamp - EPOCH) << (MACHINE_BITS + SEQUENCE_BITS))
+                | (machineId << SEQUENCE_BITS)
+                | sequence;
+    }
+}
+```
+
+---
+
 ## Trade-offs
 
 | Aspecto | Fan-out on Write | Fan-out on Read | Hybrid |

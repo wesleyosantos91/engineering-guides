@@ -1,7 +1,8 @@
 # Blue-Green Deploy
 
-> **Categoria:** Modernização e Deploy Progressivo
+> **Categoria:** Estratégias de Modernização e Deploy
 > **Complementa:** Health Checks, Canary Release, Feature Flags
+> **Keywords:** blue-green deploy, zero downtime, rollback instantâneo, ambiente duplicado, cutover, release segura
 
 ---
 

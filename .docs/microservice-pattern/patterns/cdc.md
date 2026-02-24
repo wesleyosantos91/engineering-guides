@@ -1,7 +1,8 @@
 # CDC (Change Data Capture)
 
-> **Categoria:** Event-Driven e Mensageria
+> **Categoria:** Event-Driven e Escalabilidade
 > **Complementa:** Outbox Pattern, CQRS, Event Sourcing
+> **Keywords:** CDC, Change Data Capture, Debezium, replicação de dados, log de transações, captura de mudanças
 
 ---
 

@@ -3,6 +3,7 @@
 > **Categoria:** Persistência e Processamento de Dados
 > **Origem:** Hector Garcia-Molina & Kenneth Salem (1987)
 > **Complementa:** Idempotência, Outbox Pattern, DLQ
+> **Keywords:** saga, transação distribuída, orquestração, coreografia, compensação, consistência eventual
 
 ---
 

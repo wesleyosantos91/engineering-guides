@@ -2,6 +2,7 @@
 
 > **Categoria:** Infraestrutura e Deploy
 > **Complementa:** Feature Flags, Health Checks, Service Discovery
+> **Keywords:** configuração externa, externalized configuration, config server, environment variables, secrets management, twelve-factor
 
 ---
 

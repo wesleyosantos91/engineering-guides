@@ -1,8 +1,9 @@
 # Observabilidade
 
-> **Categoria:** Observabilidade e Monitoramento
+> **Categoria:** Observabilidade
 > **Os 3 Pilares:** Métricas, Logs, Traces Distribuídos
 > **Complementa:** Health Checks, Circuit Breaker, Rate Limiter
+> **Keywords:** observabilidade, métricas, logs, traces distribuídos, OpenTelemetry, monitoramento, telemetria, correlação
 
 ---
 

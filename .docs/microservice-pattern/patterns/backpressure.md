@@ -1,7 +1,8 @@
 # Backpressure
 
-> **Categoria:** Event-Driven e Mensageria
+> **Categoria:** Event-Driven e Escalabilidade
 > **Complementa:** Rate Limiter, Bulkhead, DLQ
+> **Keywords:** backpressure, contrapressão, controle de fluxo, producer-consumer, buffer overflow, reactive streams
 
 ---
 

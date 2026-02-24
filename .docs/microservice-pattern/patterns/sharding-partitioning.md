@@ -1,7 +1,8 @@
 # Sharding & Partitioning
 
-> **Categoria:** Event-Driven e Mensageria / Persistência
+> **Categoria:** Event-Driven e Escalabilidade
 > **Complementa:** CQRS, Backpressure, Rate Limiter
+> **Keywords:** sharding, partitioning, particionamento, distribuição de dados, shard key, escalabilidade horizontal
 
 ---
 

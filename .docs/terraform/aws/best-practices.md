@@ -24,6 +24,11 @@
 - [Formatação e Lint](#formatação-e-lint)
 - [Documentação Automatizada](#documentação-automatizada)
 - [Custo — Infracost](#custo--infracost)
+- [Check Blocks — Validação Pós-Apply](#check-blocks--validação-pós-apply)
+- [Ephemeral Values — Secrets Seguros](#ephemeral-values--secrets-seguros)
+- [Removed Blocks — Remoção Segura](#removed-blocks--remoção-segura)
+- [terraform_data — Substituto do null_resource](#terraform_data--substituto-do-null_resource)
+- [Provider-Defined Functions](#provider-defined-functions)
 - [Anti-Patterns a Evitar](#anti-patterns-a-evitar)
 
 ---
@@ -34,7 +39,7 @@
 2. **Nunca hardcode** — use variáveis, locals e data sources
 3. **Pin versions** — provider, módulos e Terraform CLI
 4. **Sempre use `terraform plan`** antes de `apply`
-5. **State remoto com lock** — S3 + DynamoDB, sempre
+5. **State remoto com lock** — S3 com `use_lockfile = true` (nativo 1.10+); DynamoDB apenas em projetos legados
 6. **Code review** — toda mudança de infra passa por PR
 7. **Testes automatizados** — unit + integration em CI
 8. **Não misture responsabilidades** — separe networking, compute, data em states diferentes
@@ -49,7 +54,7 @@
 
 ```hcl
 terraform {
-  required_version = ">= 1.6.0, < 2.0.0"
+  required_version = ">= 1.10.0, < 2.0.0"
 
   required_providers {
     aws = {
@@ -612,6 +617,197 @@ infracost diff --path=. --compare-to=infracost-base.json
   with:
     api-key: ${{ secrets.INFRACOST_API_KEY }}
 ```
+
+---
+
+## Check Blocks — Validação Pós-Apply
+
+> Disponível a partir do **Terraform 1.5+**. Use para validar invariantes após o apply.
+
+```hcl
+# Verifica se o website responde após deploy
+check "website_health" {
+  data "http" "app" {
+    url = "https://${aws_lb.main.dns_name}/health"
+  }
+
+  assert {
+    condition     = data.http.app.status_code == 200
+    error_message = "Application health check failed after deploy"
+  }
+}
+
+# Verifica se o certificado SSL é válido
+check "ssl_certificate_valid" {
+  data "aws_acm_certificate" "app" {
+    domain      = var.domain_name
+    statuses    = ["ISSUED"]
+    most_recent = true
+  }
+
+  assert {
+    condition     = data.aws_acm_certificate.app.status == "ISSUED"
+    error_message = "SSL certificate is not in ISSUED state"
+  }
+}
+
+# Verifica se encryption está habilitado no bucket
+check "s3_encryption_enabled" {
+  data "aws_s3_bucket" "verify" {
+    bucket = aws_s3_bucket.data.id
+  }
+
+  assert {
+    condition     = data.aws_s3_bucket.verify.arn != ""
+    error_message = "S3 bucket verification failed"
+  }
+}
+```
+
+> **Regra:** Use `check` blocks para validar pós-condições críticas. Diferente de `validation` em variáveis,
+> `check` blocks rodam após o apply e emitem warnings (não bloqueiam).
+
+---
+
+## Ephemeral Values — Secrets Seguros
+
+> Disponível a partir do **Terraform 1.10+**. Valores efêmeros não são persistidos no state.
+
+### Problema
+
+O state do Terraform armazena valores sensíveis em plain text no JSON do `.tfstate`.
+Mesmo com `sensitive = true`, o valor está no state. Ephemeral values resolvem isso.
+
+### Ephemeral Variables
+
+```hcl
+# Variável efêmera — valor NUNCA é armazenado no state
+ephemeral "variable" "db_password" {
+  description = "Password for the RDS master user"
+  type        = string
+}
+```
+
+### Ephemeral Resources
+
+```hcl
+# Lê o secret em runtime, sem persistir no state
+ephemeral "aws_secretsmanager_secret_version" "db_password" {
+  secret_id = aws_secretsmanager_secret.db_password.id
+}
+
+# Use o valor efêmero no recurso
+resource "aws_db_instance" "main" {
+  # ...
+  password = ephemeral.aws_secretsmanager_secret_version.db_password.secret_string
+}
+```
+
+### Ephemeral Outputs
+
+```hcl
+# Output efêmero — não aparece no state
+output "db_connection_string" {
+  value     = "postgresql://${var.db_user}:${ephemeral.aws_secretsmanager_secret_version.db_password.secret_string}@${aws_db_instance.main.endpoint}/mydb"
+  ephemeral = true
+}
+```
+
+> **Regra:** Para qualquer secret que transita no Terraform, prefira `ephemeral` values.
+> Isso elimina o risco de exposição via state file.
+
+---
+
+## Removed Blocks — Remoção Segura
+
+> Disponível a partir do **Terraform 1.7+**. Use para remover recursos do state sem destruí-los na AWS.
+
+```hcl
+# Remove o recurso do gerenciamento do Terraform, mas NÃO destrói na AWS
+removed {
+  from = aws_s3_bucket.legacy_logs
+
+  lifecycle {
+    destroy = false  # Mantém o recurso na AWS
+  }
+}
+
+# Remove módulo inteiro do gerenciamento
+removed {
+  from = module.old_monitoring
+
+  lifecycle {
+    destroy = false
+  }
+}
+```
+
+> **Regra:** Use `removed` blocks quando precisa parar de gerenciar um recurso via Terraform
+> sem destruí-lo. Muito útil em migrações e handoffs entre times.
+
+---
+
+## terraform_data — Substituto do null_resource
+
+> Disponível a partir do **Terraform 1.4+**. Substitui `null_resource` sem dependência de provider.
+
+```hcl
+# ✅ terraform_data — sem dependência de provider externo
+resource "terraform_data" "deployment_trigger" {
+  input = var.deployment_version
+
+  triggers_replace = [
+    var.source_code_hash,
+    var.config_hash,
+  ]
+
+  provisioner "local-exec" {
+    command = "./scripts/deploy.sh ${self.output}"
+  }
+}
+
+# ✅ Armazenar valores computados no state
+resource "terraform_data" "computed_values" {
+  input = {
+    deployment_id = "${var.project}-${var.environment}-${formatdate("YYYYMMDDHHmmss", timestamp())}"
+    region        = data.aws_region.current.name
+  }
+}
+
+# Referência: terraform_data.computed_values.output.deployment_id
+```
+
+> **Regra:** Sempre use `terraform_data` em vez de `null_resource`. Não requer
+> o provider `hashicorp/null` e tem semântica mais clara.
+
+---
+
+## Provider-Defined Functions
+
+> Disponível a partir do **Terraform 1.8+** com AWS Provider 5.40+.
+
+```hcl
+# Funções do AWS Provider — use para ARN parsing
+locals {
+  # Parse de ARN em componentes
+  parsed_arn = provider::aws::arn_parse(var.resource_arn)
+  account_id = local.parsed_arn.account
+  region     = local.parsed_arn.region
+  service    = local.parsed_arn.service
+
+  # Construir ARN a partir de componentes
+  custom_arn = provider::aws::arn_build({
+    partition  = "aws"
+    service    = "s3"
+    region     = ""
+    account_id = ""
+    resource   = "my-bucket/*"
+  })
+}
+```
+
+> **Regra:** Prefira provider-defined functions para manipulação de ARNs ao invés de
+> regex ou `split()`. São type-safe e mantidas pelo provider.
 
 ---
 

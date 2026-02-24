@@ -319,6 +319,66 @@ Quando o Primary falha, um Replica precisa ser promovido:
 
 ---
 
+## Trade-offs
+
+| Decisão | Opção A | Opção B |
+|---------|---------|---------|
+| **Sync vs Async** | Sync (zero data loss, mais lento) | Async (rápido, pode perder dados) |
+| **Single-leader vs Multi** | Single (simples, sem conflitos) | Multi (geo-distributed, write scaling) |
+| **Quorum tuning** | W=N, R=1 (durável, write lento) | W=1, R=N (write rápido, read lento) |
+| **Conflict resolution** | LWW (simples, perde dado) | CRDTs (sem perda, complexo) |
+| **Failover** | Manual (seguro, lento) | Automático (rápido, risco de split-brain) |
+
+---
+
+## Configuração Prática
+
+### PostgreSQL — Streaming Replication
+
+```sql
+-- No Primary: verificar status de replicação
+SELECT client_addr, state, sent_lsn, replay_lsn,
+       pg_wal_lsn_diff(sent_lsn, replay_lsn) AS byte_lag
+FROM pg_stat_replication;
+```
+
+```ini
+# postgresql.conf (Primary)
+wal_level = replica
+max_wal_senders = 10
+synchronous_standby_names = 'replica1'
+```
+
+### MySQL — GTID Replication
+
+```sql
+-- Configurar replica com GTID
+CHANGE REPLICATION SOURCE TO
+    SOURCE_HOST = '10.0.1.100',
+    SOURCE_USER = 'replicator',
+    SOURCE_AUTO_POSITION = 1;
+START REPLICA;
+
+-- Verificar lag
+SHOW REPLICA STATUS\G
+-- Seconds_Behind_Source: 0  ← ideal
+```
+
+### Redis — Replication
+
+```redis
+# No replica
+REPLICAOF 10.0.1.100 6379
+
+# Verificar info
+INFO replication
+# role:slave
+# master_link_status:up
+# master_last_io_seconds_ago:0
+```
+
+---
+
 ## Uso em Big Techs
 
 | Empresa | Topologia | Estratégia | Detalhes |
@@ -372,7 +432,7 @@ Spanner: banco distribuído GLOBALMENTE com STRONG CONSISTENCY
 3. **"Quorum replication — o que é W+R>N?"**
    - N=total, W=write acks, R=read responses
    - Se W+R>N → pelo menos 1 nó tem AMBOS (latest write + read)
-   - Garante que read sempre vê o escritamais recente
+   - Garante que read sempre vê a escrita mais recente
 
 4. **"Como lidar com failover?"**
    - Detectar falha (heartbeat), promover replica, redirect clients

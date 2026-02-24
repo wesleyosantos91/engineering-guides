@@ -1,8 +1,9 @@
 # Strangler Fig Pattern
 
-> **Categoria:** Modernização e Deploy Progressivo
+> **Categoria:** Estratégias de Modernização e Deploy
 > **Origem:** Martin Fowler (inspirado na Figueira Estranguladora)
 > **Complementa:** CDC, Blue-Green Deploy, API Gateway, Feature Flags
+> **Keywords:** strangler fig, migração incremental, modernização de legado, decomposição de monolito, routing facade
 
 ---
 

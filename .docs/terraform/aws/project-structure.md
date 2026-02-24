@@ -148,6 +148,18 @@ live/dev/networking/
 ### backend.tf — Exemplo
 
 ```hcl
+# ✅ Recomendado (Terraform 1.10+) — Native S3 Locking
+terraform {
+  backend "s3" {
+    bucket       = "mycompany-terraform-state"
+    key          = "dev/networking/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true   # Lock nativo via .tflock no S3 (sem DynamoDB)
+    encrypt      = true
+  }
+}
+
+# ⚠️ Legado (projetos existentes) — S3 + DynamoDB
 terraform {
   backend "s3" {
     bucket         = "mycompany-terraform-state"
@@ -160,6 +172,7 @@ terraform {
 ```
 
 > **Regra:** Cada componente por ambiente tem seu próprio state file (`key` diferente).
+> Para novos projetos, use `use_lockfile = true` (nativo 1.10+) e elimine o DynamoDB.
 
 ### providers.tf — Exemplo
 

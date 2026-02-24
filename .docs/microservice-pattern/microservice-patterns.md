@@ -6,9 +6,21 @@
 
 ---
 
+## Como usar este guia
+
+Este repositório é uma **base de conhecimento** para assistentes de IA (Copilot, etc.) e engenheiros.
+
+- **Cada arquivo** na pasta `patterns/` é autossuficiente: contém problema, solução, conceitos, pseudocódigo, antipadrões e boas práticas.
+- **Para escolher um padrão:** consulte a tabela [Referência Rápida](#referência-rápida--quando-usar-cada-padrão) abaixo.
+- **Para entender a relação entre padrões:** cada arquivo contém uma seção "Relação com Outros Padrões" que conecta ao contexto mais amplo.
+- **Para implementar:** use os pseudocódigos como ponto de partida — são agnósticos de linguagem e focam na lógica essencial.
+
+---
+
 ## Sumário
 
 - [Microservice Patterns](#microservice-patterns)
+  - [Como usar este guia](#como-usar-este-guia)
   - [Sumário](#sumário)
   - [1. Resiliência](#1-resiliência)
   - [2. Persistência e Processamento de Dados](#2-persistência-e-processamento-de-dados)

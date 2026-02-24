@@ -2,6 +2,7 @@
 
 > **Categoria:** Persistência e Processamento de Dados
 > **Complementa:** Retry, DLQ, Saga
+> **Keywords:** idempotência, idempotency key, deduplicação, processamento duplicado, at-least-once, chave de idempotência
 
 ---
 

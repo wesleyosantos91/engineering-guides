@@ -10,7 +10,9 @@
 ## Sumário
 
 - [O que é o State](#o-que-é-o-state)
-- [Backend S3 + DynamoDB](#backend-s3--dynamodb)
+- [Backend S3 — Configuração](#backend-s3--configuração)
+- [Native S3 Locking (Terraform 1.10+)](#native-s3-locking-terraform-110)
+- [Legado: S3 + DynamoDB](#legado-s3--dynamodb)
 - [Criação do Backend (Bootstrap)](#criação-do-backend-bootstrap)
 - [Isolamento de State](#isolamento-de-state)
 - [Remote State como Data Source](#remote-state-como-data-source)
@@ -44,19 +46,19 @@ Terraform Code ──► terraform plan ──► Compara Code vs State ──�
 
 ---
 
-## Backend S3 + DynamoDB
+## Backend S3 — Configuração
 
-### Configuração Padrão
+### Configuração Recomendada (Terraform 1.10+)
 
 ```hcl
-# backend.tf
+# backend.tf — Native S3 Locking (sem DynamoDB)
 terraform {
   backend "s3" {
-    bucket         = "mycompany-terraform-state"
-    key            = "prod/networking/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "terraform-locks"
-    encrypt        = true
+    bucket       = "mycompany-terraform-state"
+    key          = "prod/networking/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true   # ✅ Lock nativo via arquivo .tflock no S3
+    encrypt      = true
 
     # Opcional — assume role para acesso cross-account
     # role_arn = "arn:aws:iam::123456789012:role/TerraformStateAccess"
@@ -64,7 +66,93 @@ terraform {
 }
 ```
 
-### Por que S3 + DynamoDB?
+> **Importante:** A partir do Terraform 1.10, o locking é nativo via S3 usando arquivos `.tflock`.
+> Não é mais necessário DynamoDB para novos projetos.
+
+### Configuração Legado (projetos existentes com DynamoDB)
+
+```hcl
+# backend.tf — S3 + DynamoDB (manter para projetos legados)
+terraform {
+  backend "s3" {
+    bucket         = "mycompany-terraform-state"
+    key            = "prod/networking/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"  # Legado — migre para use_lockfile
+    encrypt        = true
+  }
+}
+```
+
+---
+
+## Native S3 Locking (Terraform 1.10+)
+
+O Terraform 1.10 introduziu locking nativo no S3, eliminando a necessidade de DynamoDB.
+
+### Como Funciona
+
+```
+terraform apply
+  ├── 1. Cria arquivo .tflock no S3 (conditional PutObject)
+  ├── 2. Se outro processo já tem o lock, FALHA com erro
+  ├── 3. Executa apply
+  ├── 4. Atualiza state no S3
+  └── 5. Remove arquivo .tflock
+```
+
+### Vantagens sobre DynamoDB
+
+| Aspecto | DynamoDB (legado) | Native S3 Lock (1.10+) |
+|---------|-------------------|------------------------|
+| Infraestrutura extra | ❗ Requer DynamoDB table | ✅ Apenas S3 |
+| Custo | ~$0.01/mês | ✅ $0 (incluso no S3) |
+| Configuração | Mais complexa | ✅ Uma linha: `use_lockfile = true` |
+| Bootstrap | Requer criar tabela | ✅ Apenas bucket |
+| Permissões IAM | S3 + DynamoDB | ✅ Apenas S3 |
+| Confiabilidade | Alta | ✅ Alta (S3 conditional writes) |
+
+### Migração de DynamoDB para Native Lock
+
+```hcl
+# Antes (legado)
+terraform {
+  backend "s3" {
+    bucket         = "mycompany-terraform-state"
+    key            = "prod/networking/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}
+
+# Depois (nativo 1.10+)
+terraform {
+  backend "s3" {
+    bucket       = "mycompany-terraform-state"
+    key          = "prod/networking/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true
+    encrypt      = true
+  }
+}
+```
+
+```bash
+# Migração é simples — apenas re-init
+terraform init -reconfigure
+
+# Após migrar todos os projetos, pode remover a tabela DynamoDB
+```
+
+---
+
+## Legado: S3 + DynamoDB
+
+> **Nota:** Esta seção é mantida para referência de projetos existentes.
+> Para novos projetos, use `use_lockfile = true` (seção anterior).
+
+### Por que S3 + DynamoDB (histórico)
 
 | Requisito | S3 | DynamoDB |
 |-----------|-----|----------|
@@ -82,6 +170,10 @@ O backend precisa existir **antes** de ser usado. Use um script de bootstrap:
 
 ```hcl
 # bootstrap/main.tf — Execute manualmente uma única vez
+
+terraform {
+  required_version = ">= 1.10.0"
+}
 
 provider "aws" {
   region = "us-east-1"
@@ -143,6 +235,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "terraform_state" {
 }
 
 resource "aws_dynamodb_table" "terraform_locks" {
+  # ⚠️ Legado — apenas para projetos existentes que usam DynamoDB
+  # Novos projetos devem usar use_lockfile = true (sem DynamoDB)
   name         = "terraform-locks"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
@@ -302,7 +396,7 @@ locals {
 
 ## State Locking
 
-### Como Funciona
+### Como Funciona (DynamoDB — legado)
 
 ```
 Developer A: terraform apply
@@ -315,6 +409,21 @@ Developer A: terraform apply
 Developer B: terraform apply (ao mesmo tempo)
   ├── 1. Tenta adquirir lock no DynamoDB
   └── 2. LOCK FALHOU ❌ — "Error acquiring the state lock"
+```
+
+### Como Funciona (Native S3 Lock — 1.10+)
+
+```
+Developer A: terraform apply
+  ├── 1. Cria arquivo .tflock no S3 (conditional PutObject)
+  ├── 2. Lock adquirido ✅
+  ├── 3. Executa apply
+  ├── 4. Atualiza state no S3
+  └── 5. Remove arquivo .tflock do S3
+
+Developer B: terraform apply (ao mesmo tempo)
+  ├── 1. Tenta criar .tflock (conditional PutObject)
+  └── 2. LOCK FALHOU ❌ — objeto já existe
 ```
 
 ### Forçar Unlock (Emergência)
@@ -571,10 +680,10 @@ vim terraform.tfstate  # ❌ JAMAIS
 ### ❌ Compartilhar State sem Lock
 
 ```hcl
-# RUIM — S3 sem DynamoDB
+# RUIM — S3 sem nenhum tipo de lock
 backend "s3" {
   bucket = "my-state"
-  # Sem dynamodb_table = PERIGO
+  # Sem use_lockfile = true E sem dynamodb_table = PERIGO
 }
 ```
 

@@ -2,6 +2,7 @@
 
 > **Categoria:** Infraestrutura e Deploy
 > **Complementa:** API Gateway/BFF, Health Checks, Sidecar
+> **Keywords:** service discovery, registro de serviços, client-side discovery, server-side discovery, service registry, DNS
 
 ---
 

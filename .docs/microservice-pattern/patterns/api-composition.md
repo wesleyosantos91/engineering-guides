@@ -2,6 +2,7 @@
 
 > **Categoria:** Persistência e Processamento de Dados
 > **Complementa:** CQRS, API Gateway/BFF, Circuit Breaker
+> **Keywords:** API Composition, agregação de dados, consulta distribuída, join entre serviços, orquestração de queries
 
 ---
 

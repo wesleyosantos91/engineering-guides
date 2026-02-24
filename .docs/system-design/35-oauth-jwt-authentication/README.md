@@ -392,6 +392,90 @@ Problema: JWT é stateless → como invalidar antes de expirar?
 
 ---
 
+## Trade-offs
+
+| Decisão | Opção A | Opção B |
+|---------|---------|---------|
+| **JWT vs Session** | JWT (stateless, scalable) | Session (revogável, simples) |
+| **Token lifetime** | Curto 5-15min (seguro) | Longo 1h+ (menos refresh) |
+| **Storage** | In-memory (seguro vs XSS) | Cookie httpOnly (seguro vs CSRF) |
+| **Validation** | Local (rápido, sem rede) | Remote introspection (revogável) |
+| **Auth provider** | Self-hosted (controle) | IDaaS/Auth0 (velocidade) |
+
+---
+
+## Implementação Prática
+
+### Validação JWT (Java / Spring Boot)
+
+```java
+@Component
+public class JwtTokenProvider {
+
+    @Value("${jwt.secret}")
+    private String secretKey;
+
+    public String createToken(String userId, List<String> roles) {
+        Claims claims = Jwts.claims().setSubject(userId);
+        claims.put("roles", roles);
+
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + 900_000); // 15 min
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(SignatureAlgorithm.HS256, secretKey)
+                .compact();
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public String getUserId(String token) {
+        return Jwts.parser().setSigningKey(secretKey)
+                .parseClaimsJws(token).getBody().getSubject();
+    }
+}
+```
+
+### Middleware de Autenticação (Python / FastAPI)
+
+```python
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import jwt
+
+security = HTTPBearer()
+SECRET_KEY = "your-secret-key"
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> dict:
+    try:
+        payload = jwt.decode(
+            credentials.credentials, SECRET_KEY, algorithms=["HS256"]
+        )
+        return {"user_id": payload["sub"], "roles": payload.get("roles", [])}
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/profile")
+async def get_profile(user: dict = Depends(get_current_user)):
+    return {"user_id": user["user_id"]}
+```
+
+---
+
 ## Uso em Big Techs
 
 | Empresa | Stack | Detalhes |

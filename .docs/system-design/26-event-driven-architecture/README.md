@@ -456,7 +456,7 @@ Event-Driven Trip Flow:
 3. **"Como garantir ordering?"**
    - Kafka: partition key (eventos do mesmo aggregate → mesma partition)
    - Sequence numbers no evento
-   - Consumir eventi in-order por aggregate, não globalmente
+   - Consumir eventos in-order por aggregate, não globalmente
 
 4. **"Como lidar com falhas?"**
    - Retry com exponential backoff

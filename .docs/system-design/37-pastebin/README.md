@@ -286,6 +286,77 @@ CREATE TABLE pastes (
 
 ---
 
+## Trade-offs
+
+| Decisão | Opção A | Opção B |
+|---------|---------|---------|
+| **Storage** | DB (simples, ACID) | S3/Object storage (escala, custo) |
+| **ID generation** | Auto-increment (simples) | Base62/hash (não previsível) |
+| **Expiration** | Lazy check on read | CRON batch cleanup |
+| **Syntax highlight** | Server-side (Pygments) | Client-side (highlight.js) |
+| **Privacy** | Public URL | Encryption + password |
+| **CDN** | Para static assets | Para raw paste content |
+
+---
+
+## Implementação Prática
+
+### API de Criação de Paste (Python / FastAPI)
+
+```python
+import hashlib
+import time
+import boto3
+from fastapi import FastAPI, HTTPException
+
+app = FastAPI()
+s3 = boto3.client('s3')
+BUCKET = 'pastebin-content'
+BASE62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+def base62_encode(num: int) -> str:
+    if num == 0:
+        return BASE62[0]
+    result = []
+    while num > 0:
+        result.append(BASE62[num % 62])
+        num //= 62
+    return ''.join(reversed(result))
+
+def generate_paste_id() -> str:
+    hash_input = f"{time.time_ns()}"
+    hash_hex = hashlib.md5(hash_input.encode()).hexdigest()
+    num = int(hash_hex[:12], 16)
+    return base62_encode(num)[:8]
+
+@app.post("/api/pastes")
+async def create_paste(content: str, language: str = "text", ttl_hours: int = 24):
+    paste_id = generate_paste_id()
+
+    # Upload conteúdo para S3
+    s3.put_object(
+        Bucket=BUCKET, Key=f"pastes/{paste_id}",
+        Body=content.encode('utf-8'),
+        ContentType='text/plain'
+    )
+
+    # Salvar metadata no DB (simplificado)
+    # db.execute("INSERT INTO pastes (...) VALUES (...)")
+
+    return {"id": paste_id, "url": f"https://paste.example.com/{paste_id}"}
+
+@app.get("/api/pastes/{paste_id}")
+async def get_paste(paste_id: str):
+    try:
+        obj = s3.get_object(Bucket=BUCKET, Key=f"pastes/{paste_id}")
+        content = obj['Body'].read().decode('utf-8')
+        return {"id": paste_id, "content": content}
+    except s3.exceptions.NoSuchKey:
+        raise HTTPException(status_code=404, detail="Paste not found")
+```
+
+---
+
 ## Uso em Big Techs
 
 | Empresa/Produto | Foco | Detalhes |

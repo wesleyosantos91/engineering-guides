@@ -188,7 +188,7 @@ Nem toda chamada precisa de todos os padrões. Use a tabela para decidir:
 
 | Antipadrão | Problema | Solução |
 |-----------|----------|---------|
-| Retry **fora** do Circuit Breaker | Retry tenta quando o CB está aberto — desperdício | Retry deve ser externo ao CB (mas o CB rejeita fast) |
+| Retry **sem respeitar** o Circuit Breaker | Retry continua tentando mesmo quando o CB está aberto — desperdício de recursos | Retry envolve o CB (Retry → CB); quando o CB rejeita fast, o Retry conta como tentativa falhada e respeita o maxRetries |
 | Timeout **fora** do Bulkhead | Timeout não libera o slot do bulkhead quando estoura | Timeout deve ser externo ao Bulkhead |
 | Rate Limiter dentro do Retry | Cada retry conta como nova requisição no rate limiter | Rate Limiter deve ficar entre CB e Timeout |
 | Todos os padrões em tudo | Overhead e complexidade desnecessários | Aplique apenas os padrões relevantes p/ cada caso |

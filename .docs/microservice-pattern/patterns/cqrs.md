@@ -3,6 +3,7 @@
 > **Categoria:** Persistência e Processamento de Dados
 > **Origem:** Greg Young (2010), baseado no CQS de Bertrand Meyer
 > **Complementa:** Event Sourcing, Outbox Pattern, API Composition
+> **Keywords:** CQRS, Command Query Responsibility Segregation, separação leitura escrita, read model, write model, projeção
 
 ---
 

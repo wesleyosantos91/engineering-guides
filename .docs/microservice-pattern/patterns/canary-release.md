@@ -1,7 +1,8 @@
 # Canary Release
 
-> **Categoria:** Modernização e Deploy Progressivo
+> **Categoria:** Estratégias de Modernização e Deploy
 > **Complementa:** Blue-Green Deploy, Feature Flags, Health Checks, API Gateway
+> **Keywords:** canary release, deploy progressivo, traffic splitting, rollout gradual, validação em produção
 
 ---
 
