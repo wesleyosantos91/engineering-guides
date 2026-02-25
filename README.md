@@ -59,15 +59,17 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── solid-principles.md
 │   └── structural-patterns.md
 ├── golang/                     # Go
+│   ├── README.md
 │   └── gin/
-│       └── project-structure.md
+│       └── README.md
 ├── java/                       # Java
+│   ├── README.md
 │   ├── micronaut/
-│   │   └── project-structure.md
+│   │   └── README.md
 │   ├── quarkus/
-│   │   └── project-structure.md
+│   │   └── README.md
 │   └── spring/
-│       └── project-structure.md
+│       └── README.md
 ├── k8s/                        # Kubernetes
 │   ├── README.md
 │   ├── best-practices/
@@ -141,50 +143,50 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── 04-tech-debt-quantification.md
 │   └── 05-tech-roadmaps.md
 ├── system-design/              # System Design
-│   ├── 01-load-balancing/
-│   ├── 02-caching/
-│   ├── 03-cdn/
-│   ├── 04-dns/
-│   ├── 05-reverse-proxy/
-│   ├── 06-api-gateway/
-│   ├── 07-database-indexing/
-│   ├── 08-database-replication/
-│   ├── 09-database-sharding/
-│   ├── 10-sql-vs-nosql/
-│   ├── 11-cap-theorem/
-│   ├── 12-acid-vs-base/
-│   ├── 13-consistent-hashing/
-│   ├── 14-message-queues/
-│   ├── 15-pub-sub/
-│   ├── 16-rate-limiting/
-│   ├── 17-circuit-breaker/
-│   ├── 18-service-discovery/
-│   ├── 19-heartbeat-health-checks/
-│   ├── 20-leader-election/
-│   ├── 21-consensus-algorithms/
-│   ├── 22-gossip-protocol/
-│   ├── 23-bloom-filters/
-│   ├── 24-websockets-long-polling-sse/
-│   ├── 25-rest-graphql-grpc/
-│   ├── 26-event-driven-architecture/
-│   ├── 27-cqrs/
-│   ├── 28-event-sourcing/
-│   ├── 29-saga-pattern/
-│   ├── 30-outbox-pattern/
-│   ├── 31-back-of-the-envelope-estimation/
-│   ├── 32-data-partitioning-strategies/
-│   ├── 33-replication-strategies/
-│   ├── 34-idempotency/
-│   ├── 35-oauth-jwt-authentication/
-│   ├── 36-url-shortener/
-│   ├── 37-pastebin/
-│   ├── 38-twitter-social-feed/
-│   ├── 39-instagram-photo-sharing/
-│   ├── 40-whatsapp-chat-system/
-│   ├── 41-youtube-netflix-video-streaming/
-│   ├── 42-uber-ride-sharing/
-│   ├── 43-google-maps-navigation/
-│   └── system-design-big-techs.md
+│   ├── README.md
+│   ├── 01-load-balancing.md
+│   ├── 02-caching.md
+│   ├── 03-cdn.md
+│   ├── 04-dns.md
+│   ├── 05-reverse-proxy.md
+│   ├── 06-api-gateway.md
+│   ├── 07-database-indexing.md
+│   ├── 08-database-replication.md
+│   ├── 09-database-sharding.md
+│   ├── 10-sql-vs-nosql.md
+│   ├── 11-cap-theorem.md
+│   ├── 12-acid-vs-base.md
+│   ├── 13-consistent-hashing.md
+│   ├── 14-message-queues.md
+│   ├── 15-pub-sub.md
+│   ├── 16-rate-limiting.md
+│   ├── 17-circuit-breaker.md
+│   ├── 18-service-discovery.md
+│   ├── 19-heartbeat-health-checks.md
+│   ├── 20-leader-election.md
+│   ├── 21-consensus-algorithms.md
+│   ├── 22-gossip-protocol.md
+│   ├── 23-bloom-filters.md
+│   ├── 24-websockets-long-polling-sse.md
+│   ├── 25-rest-graphql-grpc.md
+│   ├── 26-event-driven-architecture.md
+│   ├── 27-cqrs.md
+│   ├── 28-event-sourcing.md
+│   ├── 29-saga-pattern.md
+│   ├── 30-outbox-pattern.md
+│   ├── 31-back-of-the-envelope-estimation.md
+│   ├── 32-data-partitioning-strategies.md
+│   ├── 33-replication-strategies.md
+│   ├── 34-idempotency.md
+│   ├── 35-oauth-jwt-authentication.md
+│   ├── 36-url-shortener.md
+│   ├── 37-pastebin.md
+│   ├── 38-twitter-social-feed.md
+│   ├── 39-instagram-photo-sharing.md
+│   ├── 40-whatsapp-chat-system.md
+│   ├── 41-youtube-netflix-video-streaming.md
+│   ├── 42-uber-ride-sharing.md
+│   └── 43-google-maps-navigation.md
 └── terraform/                  # Terraform / IaC
     ├── README.md
     └── aws/
