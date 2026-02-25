@@ -59,15 +59,17 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── solid-principles.md
 │   └── structural-patterns.md
 ├── golang/                     # Go
+│   ├── README.md
 │   └── gin/
-│       └── project-structure.md
+│       └── README.md
 ├── java/                       # Java
+│   ├── README.md
 │   ├── micronaut/
-│   │   └── project-structure.md
+│   │   └── README.md
 │   ├── quarkus/
-│   │   └── project-structure.md
+│   │   └── README.md
 │   └── spring/
-│       └── project-structure.md
+│       └── README.md
 ├── k8s/                        # Kubernetes
 │   ├── README.md
 │   ├── best-practices/
