@@ -76,7 +76,7 @@ diferentes que poderiam causar alteração naquela classe, ela está fazendo coi
 | Classe `OrderManager` com 2000+ linhas | Dividir por responsabilidade: `OrderCreator`, `OrderCalculator`, `OrderShipper` |
 | Controller que contém regras de negócio, validação e serialização | Extrair para Service, Validator e Serializer |
 
-> **Padrões que ajudam:** [Facade](structural-patterns.md#facade), [Mediator](behavioral-patterns.md#mediator), [Command](behavioral-patterns.md#command)
+> **Padrões que ajudam:** [Facade](../03-structural-patterns/README.md#facade), [Mediator](../04-behavioral-patterns/README.md#mediator), [Command](../04-behavioral-patterns/README.md#command)
 
 ---
 
@@ -120,11 +120,11 @@ Você deve conseguir adicionar novos comportamentos **sem alterar** o código ex
 
 | Violação | Solução |
 |----------|--------|
-| `if (type == "A") {...} else if (type == "B") {...}` que cresce a cada novo tipo | Usar polimorfismo via [Strategy](behavioral-patterns.md#strategy) ou [Factory Method](creational-patterns.md#factory-method) |
-| Método que precisa ser alterado toda vez que um novo formato de exportação é adicionado | Usar [Strategy](behavioral-patterns.md#strategy) com `ExportStrategy` |
-| Classe base modificada para cada nova funcionalidade | Usar [Decorator](structural-patterns.md#decorator) para estender comportamento |
+| `if (type == "A") {...} else if (type == "B") {...}` que cresce a cada novo tipo | Usar polimorfismo via [Strategy](../04-behavioral-patterns/README.md#strategy) ou [Factory Method](../02-creational-patterns/README.md#factory-method) |
+| Método que precisa ser alterado toda vez que um novo formato de exportação é adicionado | Usar [Strategy](../04-behavioral-patterns/README.md#strategy) com `ExportStrategy` |
+| Classe base modificada para cada nova funcionalidade | Usar [Decorator](../03-structural-patterns/README.md#decorator) para estender comportamento |
 
-> **Padrões que ajudam:** [Strategy](behavioral-patterns.md#strategy), [Decorator](structural-patterns.md#decorator), [Observer](behavioral-patterns.md#observer), [Template Method](behavioral-patterns.md#template-method)
+> **Padrões que ajudam:** [Strategy](../04-behavioral-patterns/README.md#strategy), [Decorator](../03-structural-patterns/README.md#decorator), [Observer](../04-behavioral-patterns/README.md#observer), [Template Method](../04-behavioral-patterns/README.md#template-method)
 
 ---
 
@@ -178,8 +178,8 @@ expectativa ao forçar ambas dimensões a serem iguais.
 | `ReadOnlyList` que herda de `List` e lança exceção em `add()` | Usar interface segregada (ISP): `Readable` vs `Writable` |
 | Subtipo que muda o comportamento esperado (ex: retorna dados em formato diferente) | Garantir contrato: mesmas pré/pós-condições |
 
-> **Padrões que ajudam:** [Factory Method](creational-patterns.md#factory-method), [Abstract Factory](creational-patterns.md#abstract-factory) (garantem subtipos corretos)
-> **Veja também:** [Composição sobre Herança](best-practices.md#composição-sobre-herança)
+> **Padrões que ajudam:** [Factory Method](../02-creational-patterns/README.md#factory-method), [Abstract Factory](../02-creational-patterns/README.md#abstract-factory) (garantem subtipos corretos)
+> **Veja também:** [Composição sobre Herança](../06-best-practices/README.md#composição-sobre-herança)
 
 ---
 
@@ -225,7 +225,7 @@ expectativa ao forçar ambas dimensões a serem iguais.
 | Interface `Worker` com `work()` e `eat()` — robôs não comem | Segregar: `Workable` e `Feedable` |
 | Classe forçada a implementar 15 métodos quando usa apenas 3 | Dividir em interfaces por papel/respons. |
 
-> **Padrões que ajudam:** [Adapter](structural-patterns.md#adapter), [Facade](structural-patterns.md#facade) (expõem interfaces segregadas)
+> **Padrões que ajudam:** [Adapter](../03-structural-patterns/README.md#adapter), [Facade](../03-structural-patterns/README.md#facade) (expõem interfaces segregadas)
 
 ---
 
@@ -290,8 +290,8 @@ expectativa ao forçar ambas dimensões a serem iguais.
 | Testes impossíveis porque dependência é concreta e não substituível | Extrair interface e usar DI container |
 | Classe de domínio importando framework de persistência | Mover dependência para adapter (Hexagonal) |
 
-> **Padrões que ajudam:** [Abstract Factory](creational-patterns.md#abstract-factory), [Strategy](behavioral-patterns.md#strategy), [Hexagonal Architecture](architectural-patterns.md#hexagonal-architecture-ports--adapters)
-> **Veja também:** [Program to an Interface](best-practices.md#program-to-an-interface-not-an-implementation)
+> **Padrões que ajudam:** [Abstract Factory](../02-creational-patterns/README.md#abstract-factory), [Strategy](../04-behavioral-patterns/README.md#strategy), [Hexagonal Architecture](../05-architectural-patterns/README.md#hexagonal-architecture-ports--adapters)
+> **Veja também:** [Program to an Interface](../06-best-practices/README.md#program-to-an-interface-not-an-implementation)
 
 ---
 
@@ -299,11 +299,11 @@ expectativa ao forçar ambas dimensões a serem iguais.
 
 | Princípio | Padrões que ajudam a aplicá-lo |
 |-----------|-------------------------------|
-| **SRP** | [Facade](structural-patterns.md#facade), [Mediator](behavioral-patterns.md#mediator), [Command](behavioral-patterns.md#command) |
-| **OCP** | [Strategy](behavioral-patterns.md#strategy), [Decorator](structural-patterns.md#decorator), [Observer](behavioral-patterns.md#observer), [Template Method](behavioral-patterns.md#template-method) |
-| **LSP** | [Factory Method](creational-patterns.md#factory-method), [Abstract Factory](creational-patterns.md#abstract-factory) (garantem subtipos corretos) |
-| **ISP** | [Adapter](structural-patterns.md#adapter), [Facade](structural-patterns.md#facade) (expõem interfaces segregadas) |
-| **DIP** | [Abstract Factory](creational-patterns.md#abstract-factory), [Strategy](behavioral-patterns.md#strategy), [Hexagonal](architectural-patterns.md#hexagonal-architecture-ports--adapters) |
+| **SRP** | [Facade](../03-structural-patterns/README.md#facade), [Mediator](../04-behavioral-patterns/README.md#mediator), [Command](../04-behavioral-patterns/README.md#command) |
+| **OCP** | [Strategy](../04-behavioral-patterns/README.md#strategy), [Decorator](../03-structural-patterns/README.md#decorator), [Observer](../04-behavioral-patterns/README.md#observer), [Template Method](../04-behavioral-patterns/README.md#template-method) |
+| **LSP** | [Factory Method](../02-creational-patterns/README.md#factory-method), [Abstract Factory](../02-creational-patterns/README.md#abstract-factory) (garantem subtipos corretos) |
+| **ISP** | [Adapter](../03-structural-patterns/README.md#adapter), [Facade](../03-structural-patterns/README.md#facade) (expõem interfaces segregadas) |
+| **DIP** | [Abstract Factory](../02-creational-patterns/README.md#abstract-factory), [Strategy](../04-behavioral-patterns/README.md#strategy), [Hexagonal](../05-architectural-patterns/README.md#hexagonal-architecture-ports--adapters) |
 
 ### Guia de decisão: qual princípio aplicar primeiro?
 
@@ -328,4 +328,4 @@ Analisando código problemático?
 
 > **Dica:** Design Patterns são **implementações concretas** dos princípios SOLID.
 > Entender SOLID primeiro torna o aprendizado de patterns muito mais natural.
-> **Veja também:** [Boas Práticas de Design](best-practices.md), [Padrões Arquiteturais](architectural-patterns.md)
+> **Veja também:** [Boas Práticas de Design](../06-best-practices/README.md), [Padrões Arquiteturais](../05-architectural-patterns/README.md)

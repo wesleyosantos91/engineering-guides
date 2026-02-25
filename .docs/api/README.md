@@ -143,3 +143,4 @@ Independente do paradigma, considere um API Gateway para centralizar:
 | **AWS API Gateway** | Managed | REST/WebSocket na AWS |
 | **Apollo Router** | Open-source | GraphQL Federation |
 | **Apigee** | Managed | APIs públicas enterprise |
+

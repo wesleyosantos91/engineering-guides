@@ -110,7 +110,7 @@ e fornecer um ponto de acesso global a ela.
 | **DIP** | Prefira DI com escopo singleton para não violar — evita acoplamento ao `getInstance()` |
 | **OCP** | Singleton dificulta extensão; considere Factory + DI para manter extensível |
 
-> **Veja também:** [DIP em Princípios SOLID](solid-principles.md#d--dependency-inversion-principle-dip), [Facade](structural-patterns.md#facade)
+> **Veja também:** [DIP em Princípios SOLID](../01-solid-principles/README.md#d--dependency-inversion-principle-dip), [Facade](../03-structural-patterns/README.md#facade)
 
 ---
 
@@ -185,7 +185,7 @@ qual classe concreta instanciar.
 - Pode levar a muitas subclasses paralelas (Creator + Product).
 - Para casos simples, um `if/switch` pode ser suficiente (Simple Factory).
 
-> **Veja também:** [Abstract Factory](#abstract-factory), [Template Method](behavioral-patterns.md#template-method), [OCP em SOLID](solid-principles.md#o--openclosed-principle-ocp)
+> **Veja também:** [Abstract Factory](#abstract-factory), [Template Method](../04-behavioral-patterns/README.md#template-method), [OCP em SOLID](../01-solid-principles/README.md#o--openclosed-principle-ocp)
 
 ---
 
@@ -259,7 +259,7 @@ sem especificar suas classes concretas.
 | **Extensão** | Subclasses do Creator | Nova factory concreta |
 | **Complexidade** | Menor | Maior |
 
-> **Veja também:** [Factory Method](#factory-method), [Bridge](structural-patterns.md#bridge), [DIP em SOLID](solid-principles.md#d--dependency-inversion-principle-dip)
+> **Veja também:** [Factory Method](#factory-method), [Bridge](../03-structural-patterns/README.md#bridge), [DIP em SOLID](../01-solid-principles/README.md#d--dependency-inversion-principle-dip)
 
 ---
 
@@ -349,7 +349,7 @@ o mesmo processo de construção possa criar diferentes representações.
 - Aumento no número de classes.
 - Para objetos simples (poucos campos obrigatórios), um construtor normal é suficiente.
 
-> **Veja também:** [Composite](structural-patterns.md#composite) (Builder pode construir árvores Composite), [Fluent interfaces em Boas Práticas](best-practices.md)
+> **Veja também:** [Composite](../03-structural-patterns/README.md#composite) (Builder pode construir árvores Composite), [Fluent interfaces em Boas Práticas](../06-best-practices/README.md)
 
 ---
 
@@ -418,7 +418,7 @@ evitando o custo de criação do zero.
 | **Referências circulares** | Clonagem profunda pode entrar em loop — precisa de tratamento |
 | **Identidade** | O clone deve ter seu próprio ID? Depende do domínio |
 
-> **Veja também:** [Abstract Factory](#abstract-factory) (pode usar Prototype para criar produtos), [Imutabilidade em Boas Práticas](best-practices.md#imutabilidade)
+> **Veja também:** [Abstract Factory](#abstract-factory) (pode usar Prototype para criar produtos), [Imutabilidade em Boas Práticas](../06-best-practices/README.md#imutabilidade)
 
 ---
 

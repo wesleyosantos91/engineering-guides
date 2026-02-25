@@ -6,6 +6,11 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 
 ```
 .docs/
+├── adrs/                       # Architecture Decision Records (ADRs)
+│   ├── 01-adr-foundations.md
+│   ├── 02-adr-writing-guide.md
+│   ├── 03-adr-governance-at-scale.md
+│   └── 04-adr-templates-examples.md
 ├── api/                        # API Design
 │   ├── api-guide.md
 │   ├── graphql/
@@ -108,7 +113,13 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │       ├── strangler-fig.md
 │       └── timeout.md
 ├── quality-engineering/        # Qualidade & Testes
-│   └── testing-strategy.md
+│   ├── README.md
+│   ├── testing-strategy.md
+│   ├── test-automation-patterns.md
+│   ├── performance-testing.md
+│   ├── security-testing.md
+│   ├── code-review-quality.md
+│   └── observability-quality.md
 ├── observability/              # Observabilidade Avançada
 │   ├── 01-observability-foundations.md
 │   ├── 02-distributed-tracing.md
@@ -163,6 +174,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── 43-google-maps-navigation/
 │   └── system-design-big-techs.md
 └── terraform/                  # Terraform / IaC
+    ├── README.md
     └── aws/
         ├── README.md
         ├── best-practices.md
@@ -177,6 +189,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 
 | Seção | Descrição |
 |-------|-----------|
+| **ADRs** | Architecture Decision Records — fundamentos, guia de escrita, governança em escala, templates e exemplos reais |
 | **API** | Boas práticas para design de APIs REST, GraphQL e gRPC |
 | **AWS** | Well-Architected, Serverless, Security, Networking, Containers, Databases, Observability, Cost Optimization, CI/CD, Disaster Recovery, Storage, Multi-Account |
 | **Data Engineering** | Arquitetura de dados na AWS — storage, processing, integração, governança e padrões de arquitetura |
@@ -186,7 +199,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 | **Go** | Estrutura de projetos com Gin |
 | **Kubernetes** | Best practices e certificações Kubernetes |
 | **Microservice Patterns** | 27 padrões essenciais para arquitetura de microsserviços |
-| **Quality Engineering** | Estratégias de testes e qualidade |
+| **Quality Engineering** | Estratégia de testes, automação, performance testing, security testing, code review e observabilidade aplicada à qualidade |
 | **Observability** | Observabilidade avançada — fundamentos, distributed tracing, SLOs/SLIs/Error Budgets, OpenTelemetry, observability-driven development |
 | **SOLID** | Princípios SOLID aplicados |
 | **System Design** | 43 tópicos de design de sistemas — conceitos fundamentais e case studies |
@@ -207,4 +220,5 @@ Cada guia de tecnologia (`project-structure.md`) já contém instruções para o
 | Data Engineering | `.docs/data-engineering/` |
 | DDD | `.docs/ddd/` |
 | Kubernetes | `.docs/k8s/` |
+| ADRs | `.docs/adrs/` |
 | Observability | `.docs/observability/` |

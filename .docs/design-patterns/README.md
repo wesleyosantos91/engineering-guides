@@ -16,21 +16,21 @@
 
 | Documento | Descrição | Palavras-chave |
 |-----------|-----------|----------------|
-| [Princípios SOLID](solid-principles.md) | Os 5 princípios fundamentais de design OO | SRP, OCP, LSP, ISP, DIP, responsabilidade, extensão, substituição, segregação, inversão |
-| [Padrões Criacionais](creational-patterns.md) | Factory, Abstract Factory, Builder, Prototype, Singleton | instanciação, criação de objetos, fábrica, construção, clonagem, instância única |
-| [Padrões Estruturais](structural-patterns.md) | Adapter, Bridge, Composite, Decorator, Facade, Flyweight, Proxy | composição, adaptação, wrapper, hierarquia, simplificação, cache, controle de acesso |
-| [Padrões Comportamentais](behavioral-patterns.md) | Chain of Responsibility, Command, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor | algoritmo, notificação, evento, estado, cadeia, undo, redo, travessia, coordenação |
-| [Padrões Arquiteturais](architectural-patterns.md) | MVC, Hexagonal, Clean Architecture, CQRS, Event Sourcing, Layered | arquitetura, camadas, portas, adaptadores, domínio, leitura, escrita, eventos |
-| [Boas Práticas de Design](best-practices.md) | Composição vs Herança, DRY, KISS, YAGNI, Lei de Demeter, Tell Don't Ask | composição, simplicidade, duplicação, encapsulamento, coesão, acoplamento, imutabilidade |
+| [Princípios SOLID](01-solid-principles/README.md) | Os 5 princípios fundamentais de design OO | SRP, OCP, LSP, ISP, DIP, responsabilidade, extensão, substituição, segregação, inversão |
+| [Padrões Criacionais](02-creational-patterns/README.md) | Factory, Abstract Factory, Builder, Prototype, Singleton | instanciação, criação de objetos, fábrica, construção, clonagem, instância única |
+| [Padrões Estruturais](03-structural-patterns/README.md) | Adapter, Bridge, Composite, Decorator, Facade, Flyweight, Proxy | composição, adaptação, wrapper, hierarquia, simplificação, cache, controle de acesso |
+| [Padrões Comportamentais](04-behavioral-patterns/README.md) | Chain of Responsibility, Command, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor | algoritmo, notificação, evento, estado, cadeia, undo, redo, travessia, coordenação |
+| [Padrões Arquiteturais](05-architectural-patterns/README.md) | MVC, Hexagonal, Clean Architecture, CQRS, Event Sourcing, Layered | arquitetura, camadas, portas, adaptadores, domínio, leitura, escrita, eventos |
+| [Boas Práticas de Design](06-best-practices/README.md) | Composição vs Herança, DRY, KISS, YAGNI, Lei de Demeter, Tell Don't Ask | composição, simplicidade, duplicação, encapsulamento, coesão, acoplamento, imutabilidade |
 
 ---
 
 ## Como navegar
 
-1. **Se você é iniciante:** comece por [Princípios SOLID](solid-principles.md) e depois [Boas Práticas](best-practices.md).
+1. **Se você é iniciante:** comece por [Princípios SOLID](01-solid-principles/README.md) e depois [Boas Práticas](06-best-practices/README.md).
 2. **Se quer resolver um problema específico:** vá direto ao grupo de padrões (Criacional, Estrutural ou Comportamental).
-3. **Se está projetando a arquitetura:** consulte [Padrões Arquiteturais](architectural-patterns.md).
-4. **Se está fazendo code review:** use o [Checklist de Code Review](best-practices.md#checklist-de-code-review) em Boas Práticas.
+3. **Se está projetando a arquitetura:** consulte [Padrões Arquiteturais](05-architectural-patterns/README.md).
+4. **Se está fazendo code review:** use o [Checklist de Code Review](06-best-practices/README.md#checklist-de-code-review) em Boas Práticas.
 
 ---
 
@@ -40,7 +40,7 @@
 Qual é o seu problema?
 │
 ├── Preciso CRIAR objetos de forma flexível?
-│   └── → Padrões Criacionais (creational-patterns.md)
+│   └── → Padrões Criacionais (02-creational-patterns/README.md)
 │       ├── Apenas uma instância? → Singleton
 │       ├── Família de objetos? → Abstract Factory
 │       ├── Delegar qual tipo criar? → Factory Method
@@ -48,7 +48,7 @@ Qual é o seu problema?
 │       └── Copiar objeto existente? → Prototype
 │
 ├── Preciso COMPOR objetos em estruturas maiores?
-│   └── → Padrões Estruturais (structural-patterns.md)
+│   └── → Padrões Estruturais (03-structural-patterns/README.md)
 │       ├── Interfaces incompatíveis? → Adapter
 │       ├── Duas dimensões de variação? → Bridge
 │       ├── Hierarquia parte-todo (árvore)? → Composite
@@ -58,7 +58,7 @@ Qual é o seu problema?
 │       └── Controlar acesso (lazy load, segurança, cache)? → Proxy
 │
 ├── Preciso organizar COMPORTAMENTO entre objetos?
-│   └── → Padrões Comportamentais (behavioral-patterns.md)
+│   └── → Padrões Comportamentais (04-behavioral-patterns/README.md)
 │       ├── Algoritmo intercambiável? → Strategy
 │       ├── Notificar múltiplos observers? → Observer
 │       ├── Encapsular ação como objeto (undo, fila)? → Command
@@ -71,7 +71,7 @@ Qual é o seu problema?
 │       └── Operações sobre estrutura sem alterar classes? → Visitor
 │
 ├── Preciso definir a ARQUITETURA do sistema?
-│   └── → Padrões Arquiteturais (architectural-patterns.md)
+│   └── → Padrões Arquiteturais (05-architectural-patterns/README.md)
 │       ├── App simples/CRUD? → Layered
 │       ├── Domínio rico com integrações? → Hexagonal
 │       ├── Máxima separação de concerns? → Clean Architecture
@@ -81,7 +81,7 @@ Qual é o seu problema?
 │       └── Componentes distribuídos? → Event-Driven
 │
 └── Preciso melhorar a QUALIDADE do design?
-    └── → Princípios SOLID (solid-principles.md) + Boas Práticas (best-practices.md)
+    └── → Princípios SOLID (01-solid-principles/README.md) + Boas Práticas (06-best-practices/README.md)
 ```
 
 ---

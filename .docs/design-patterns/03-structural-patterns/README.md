@@ -111,7 +111,7 @@ Permite que classes com interfaces incompatíveis trabalhem juntas.
 | **ISP** | O Adapter pode expor uma interface segregada para o cliente |
 | **DIP** | O cliente depende de Target (abstração), não do Adaptee (concreto) |
 
-> **Veja também:** [Facade](#facade), [Bridge](#bridge), [DIP em SOLID](solid-principles.md#d--dependency-inversion-principle-dip)
+> **Veja também:** [Facade](#facade), [Bridge](#bridge), [DIP em SOLID](../01-solid-principles/README.md#d--dependency-inversion-principle-dip)
 
 ---
 
@@ -185,7 +185,7 @@ possam variar independentemente.
 | **SRP** | Cada dimensão de variação é tratada separadamente |
 | **DIP** | Abstração depende de interface de implementação, não de concreto |
 
-> **Veja também:** [Abstract Factory](creational-patterns.md#abstract-factory) (pode criar os objetos do Bridge), [Strategy](behavioral-patterns.md#strategy)
+> **Veja também:** [Abstract Factory](../02-creational-patterns/README.md#abstract-factory) (pode criar os objetos do Bridge), [Strategy](../04-behavioral-patterns/README.md#strategy)
 
 ---
 
@@ -257,7 +257,7 @@ Permite que clientes tratem objetos individuais e composições de forma uniform
 | **LSP** | Leaf e Composite são substituíveis via interface Component |
 | **ISP** | Pode haver tensão — Leaf implementa métodos de gerenciamento de filhos que não usa |
 
-> **Veja também:** [Iterator](behavioral-patterns.md#iterator), [Visitor](behavioral-patterns.md#visitor), [Builder](creational-patterns.md#builder) (para construir árvores)
+> **Veja também:** [Iterator](../04-behavioral-patterns/README.md#iterator), [Visitor](../04-behavioral-patterns/README.md#visitor), [Builder](../02-creational-patterns/README.md#builder) (para construir árvores)
 
 ---
 
@@ -352,7 +352,7 @@ Uma alternativa flexível à herança para estender funcionalidade.
 | **LSP** | O decorator é substituível pelo componente original via interface |
 | **DIP** | O decorator depende da interface Component, não da implementação concreta |
 
-> **Veja também:** [Strategy](behavioral-patterns.md#strategy), [Chain of Responsibility](behavioral-patterns.md#chain-of-responsibility), [Composição sobre Herança](best-practices.md#composição-sobre-herança)
+> **Veja também:** [Strategy](../04-behavioral-patterns/README.md#strategy), [Chain of Responsibility](../04-behavioral-patterns/README.md#chain-of-responsibility), [Composição sobre Herança](../06-best-practices/README.md#composição-sobre-herança)
 
 ---
 
@@ -430,7 +430,7 @@ em um subsistema. Facade define uma interface de alto nível.
 | **ISP** | O Facade expõe apenas as operações que os clientes realmente precisam |
 | **DIP** | Clientes dependem do Facade (abstração de alto nível), não dos subsistemas |
 
-> **Veja também:** [Mediator](behavioral-patterns.md#mediator), [Singleton](creational-patterns.md#singleton) (Facades frequentemente são singletons)
+> **Veja também:** [Mediator](../04-behavioral-patterns/README.md#mediator), [Singleton](../02-creational-patterns/README.md#singleton) (Facades frequentemente são singletons)
 
 ---
 
@@ -504,7 +504,7 @@ de objetos granulares.
 |-----------|--------|
 | **SRP** | O FlyweightFactory gerencia o pool; o Flyweight cuida apenas do estado intrínseco |
 
-> **Veja também:** [Composite](#composite) (Flyweight frequentemente usado em folhas de Composite), [Imutabilidade](best-practices.md#imutabilidade)
+> **Veja também:** [Composite](#composite) (Flyweight frequentemente usado em folhas de Composite), [Imutabilidade](../06-best-practices/README.md#imutabilidade)
 
 ---
 

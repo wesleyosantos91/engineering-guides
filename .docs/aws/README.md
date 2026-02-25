@@ -121,3 +121,4 @@ Novo projeto na AWS
 - AWS Architecture Center — [aws.amazon.com/architecture](https://aws.amazon.com/architecture/)
 - AWS Whitepapers — [aws.amazon.com/whitepapers](https://aws.amazon.com/whitepapers/)
 - AWS Best Practices — [docs.aws.amazon.com/general/latest/gr](https://docs.aws.amazon.com/general/latest/gr/aws-general.pdf)
+

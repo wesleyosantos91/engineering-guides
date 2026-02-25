@@ -115,7 +115,7 @@ O Strategy permite que o algoritmo varie independentemente dos clientes que o ut
 | **DIP** | Context depende da interface Strategy, não de implementações concretas |
 | **LSP** | Todas as strategies são substituíveis via interface |
 
-> **Veja também:** [State](#state) (similar em estrutura), [Template Method](#template-method) (alternativa via herança), [Factory Method](creational-patterns.md#factory-method) (para criar a Strategy adequada), [OCP em SOLID](solid-principles.md#o--openclosed-principle-ocp)
+> **Veja também:** [State](#state) (similar em estrutura), [Template Method](#template-method) (alternativa via herança), [Factory Method](../02-creational-patterns/README.md#factory-method) (para criar a Strategy adequada), [OCP em SOLID](../01-solid-principles/README.md#o--openclosed-principle-ocp)
 
 ---
 
@@ -194,7 +194,7 @@ muda de estado, todos os seus dependentes são **notificados e atualizados** aut
 | **DIP** | Subject depende da interface Observer, não de implementações concretas |
 | **ISP** | Interface Observer é minimalista (apenas `update()`) |
 
-> **Veja também:** [Mediator](#mediator) (centraliza comunicação), [Event-Driven Architecture](architectural-patterns.md#event-driven-architecture), [Command](#command)
+> **Veja também:** [Mediator](#mediator) (centraliza comunicação), [Event-Driven Architecture](../05-architectural-patterns/README.md#event-driven-architecture), [Command](#command)
 
 ---
 
@@ -275,7 +275,7 @@ com diferentes requisições, enfileirar, registrar log e suportar **undo/redo**
 | **OCP** | Novos commands adicionados sem alterar Invoker ou Receiver |
 | **DIP** | Invoker depende da interface Command, não de implementações |
 
-> **Veja também:** [Memento](#memento) (para armazenar estado de undo), [Strategy](#strategy), [CQRS](architectural-patterns.md#cqrs--command-query-responsibility-segregation)
+> **Veja também:** [Memento](#memento) (para armazenar estado de undo), [Strategy](#strategy), [CQRS](../05-architectural-patterns/README.md#cqrs--command-query-responsibility-segregation)
 
 ---
 
@@ -358,7 +358,7 @@ para subclasses. Permite que subclasses redefinam certos passos sem alterar a es
 | **DIP** | O framework (classe base) chama código do usuário (subclasse) — Hollywood Principle |
 | **LSP** | Subclasses devem respeitar o contrato do template method |
 
-> **Veja também:** [Strategy](#strategy) (alternativa via composição), [Factory Method](creational-patterns.md#factory-method) (frequentemente usado junto), [Composição sobre Herança](best-practices.md#composição-sobre-herança)
+> **Veja também:** [Strategy](#strategy) (alternativa via composição), [Factory Method](../02-creational-patterns/README.md#factory-method) (frequentemente usado junto), [Composição sobre Herança](../06-best-practices/README.md#composição-sobre-herança)
 
 ---
 
@@ -443,7 +443,7 @@ O objeto parecerá ter mudado de classe.
 | **SRP** | Cada ConcreteState encapsula lógica de um único estado |
 | **LSP** | Todos os states são substituíveis via interface State |
 
-> **Veja também:** [Strategy](#strategy) (similar em estrutura), [Singleton](creational-patterns.md#singleton) (states compartilhados como singletons)
+> **Veja também:** [Strategy](#strategy) (similar em estrutura), [Singleton](../02-creational-patterns/README.md#singleton) (states compartilhados como singletons)
 
 ---
 
@@ -535,7 +535,7 @@ Client ──▶ Handler A ──▶ Handler B ──▶ Handler C ──▶ (fi
 | **SRP** | Cada handler se responsabiliza por um único tipo de processamento |
 | **DIP** | Handlers dependem da interface Handler, não de concretos |
 
-> **Veja também:** [Decorator](structural-patterns.md#decorator) (similar em encadeamento), [Composite](structural-patterns.md#composite), [Command](#command)
+> **Veja também:** [Decorator](../03-structural-patterns/README.md#decorator) (similar em encadeamento), [Composite](../03-structural-patterns/README.md#composite), [Command](#command)
 
 ---
 
@@ -620,7 +620,7 @@ Promove acoplamento fraco ao evitar que objetos se refiram uns aos outros direta
 | **OCP** | Novos colleagues podem ser adicionados sem alterar os existentes |
 | **DIP** | Colleagues dependem da interface Mediator, não uns dos outros |
 
-> **Veja também:** [Observer](#observer) (alternativa descentralizada), [Facade](structural-patterns.md#facade) (simplificação unidirecional)
+> **Veja também:** [Observer](#observer) (alternativa descentralizada), [Facade](../03-structural-patterns/README.md#facade) (simplificação unidirecional)
 
 ---
 
@@ -689,7 +689,7 @@ O padrão Iterator é mais relevante quando se implementa coleções customizada
 | **OCP** | Novas formas de iteração sem alterar a coleção |
 | **ISP** | Interface Iterator é minimalista (`hasNext`, `next`) |
 
-> **Veja também:** [Composite](structural-patterns.md#composite) (iteração sobre árvores), [Visitor](#visitor)
+> **Veja também:** [Composite](../03-structural-patterns/README.md#composite) (iteração sobre árvores), [Visitor](#visitor)
 
 ---
 
@@ -750,7 +750,7 @@ de modo que o objeto possa ser **restaurado** a esse estado posteriormente.
 | **SRP** | Originator cuida do negócio; Memento cuida do snapshot; Caretaker cuida do histórico |
 | **Encapsulamento** | Memento preserva encapsulamento do Originator — Caretaker não acessa internals |
 
-> **Veja também:** [Command](#command) (frequentemente usado junto para undo), [Event Sourcing](architectural-patterns.md#event-sourcing) (alternativa arquitetural para histórico)
+> **Veja também:** [Command](#command) (frequentemente usado junto para undo), [Event Sourcing](../05-architectural-patterns/README.md#event-sourcing) (alternativa arquitetural para histórico)
 
 ---
 
@@ -829,7 +829,7 @@ ElemA.accept(v) → v.visitA(this)   (double dispatch)
 | **SRP** | Cada visitor encapsula uma operação específica; elementos não acumulam lógica |
 | **Conflito com OCP** | Adicionar novos tipos de elementos requer alterar todos os visitors |
 
-> **Veja também:** [Composite](structural-patterns.md#composite) (Visitor é frequentemente usado sobre árvores Composite), [Iterator](#iterator), [Strategy](#strategy)
+> **Veja também:** [Composite](../03-structural-patterns/README.md#composite) (Visitor é frequentemente usado sobre árvores Composite), [Iterator](#iterator), [Strategy](#strategy)
 
 ---
 
