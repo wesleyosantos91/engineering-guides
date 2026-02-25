@@ -16,8 +16,7 @@
 |-----------|-----------|-----------|
 | [**Spring Boot**](01-spring.md) | Framework mais popular do ecossistema Java — convenção sobre configuração, vasto ecossistema de starters | Estrutura de pacotes, convenções, profiles, testes |
 | [**Quarkus**](02-quarkus.md) | Framework cloud-native otimizado para GraalVM e containers — startup rápido, baixo consumo de memória | Estrutura JAX-RS, CDI, Panache, configuração por profile |
-| [**Micronaut**](03-micronaut.md) | Framework com compile-time DI — sem reflection, ideal para microserviços e serverless | Estrutura de pacotes, DI em compile-time, configuração por environment |
-
+| [**Micronaut**](03-micronaut.md) | Framework com compile-time DI — sem reflection, ideal para microserviços e serverless | Estrutura de pacotes, DI em compile-time, configuração por environment || [**Jakarta EE**](04-jakarta-ee.md) | Plataforma enterprise Java padrão — portável entre runtimes (WildFly, Payara, Open Liberty, TomEE) | Estrutura JAX-RS, CDI, JPA, MicroProfile, segurança, resiliência |
 ---
 
 ## Qual framework escolher?
@@ -34,6 +33,9 @@ Qual é o seu cenário?
 ├── Compile-time DI, serverless, baixa latência de cold start?
 │   └── Micronaut
 │
+├── Portabilidade entre runtimes enterprise, padrão Jakarta EE/MicroProfile?
+│   └── Jakarta EE
+│
 └── Não tem certeza?
     └── Spring Boot (maior comunidade e documentação)
 ```
@@ -42,15 +44,15 @@ Qual é o seu cenário?
 
 ## Comparativo Rápido
 
-| Aspecto | Spring Boot | Quarkus | Micronaut |
-|---------|-------------|---------|-----------|
-| **DI** | Runtime (reflexão) | CDI (build-time otimizado) | Compile-time (sem reflexão) |
-| **Startup** | Moderado | Muito rápido | Muito rápido |
-| **Memória** | Moderado | Baixo | Baixo |
-| **GraalVM Native** | Suportado | Otimizado | Otimizado |
-| **Ecossistema** | Vastíssimo | Crescente | Crescente |
-| **Curva de aprendizado** | Suave (muita documentação) | Moderada | Moderada |
-| **Comunidade** | Muito grande | Grande | Média |
+| Aspecto | Spring Boot | Quarkus | Micronaut | Jakarta EE |
+|---------|-------------|---------|-----------|------------|
+| **DI** | Runtime (reflexão) | CDI (build-time otimizado) | Compile-time (sem reflexão) | CDI (runtime) |
+| **Startup** | Moderado | Muito rápido | Muito rápido | Moderado |
+| **Memória** | Moderado | Baixo | Baixo | Moderado |
+| **GraalVM Native** | Suportado | Otimizado | Otimizado | Limitado |
+| **Ecossistema** | Vastíssimo | Crescente | Crescente | Maduro (enterprise) |
+| **Curva de aprendizado** | Suave (muita documentação) | Moderada | Moderada | Moderada |
+| **Comunidade** | Muito grande | Grande | Média | Grande (enterprise) |
 
 ---
 

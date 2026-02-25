@@ -63,7 +63,8 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── README.md
 │   ├── 01-spring.md
 │   ├── 02-quarkus.md
-│   └── 03-micronaut.md
+│   ├── 03-micronaut.md
+│   └── 04-jakarta-ee.md
 ├── k8s/                        # Kubernetes
 │   ├── README.md
 │   ├── 01-workloads-pod-design.md
@@ -217,7 +218,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 | **Data Engineering** | Arquitetura de dados na AWS — storage, processing, integração, governança e padrões de arquitetura |
 | **DDD** | Domain-Driven Design — strategic design, tactical design, context mapping, anti-patterns, integração com arquitetura |
 | **Design Patterns** | Padrões criacionais, estruturais, comportamentais e arquiteturais |
-| **Java** | Estrutura de projetos para Spring Boot, Quarkus e Micronaut |
+| **Java** | Estrutura de projetos para Spring Boot, Quarkus, Micronaut e Jakarta EE |
 | **Go** | Estrutura de projetos com Gin |
 | **Kubernetes** | Best practices e certificações Kubernetes |
 | **Microservice Patterns** | 27 padrões essenciais para arquitetura de microsserviços |
@@ -238,6 +239,7 @@ Cada guia de tecnologia (`project-structure.md`) já contém instruções para o
 | Spring Boot | `.docs/java/01-spring.md` |
 | Quarkus | `.docs/java/02-quarkus.md` |
 | Micronaut | `.docs/java/03-micronaut.md` |
+| Jakarta EE | `.docs/java/04-jakarta-ee.md` |
 | Go (Gin) | `.docs/golang/01-gin.md` |
 | Terraform (AWS) | `.docs/terraform/aws/` |
 | AWS (Best Practices) | `.docs/aws/` |
