@@ -20,31 +20,21 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   └── rest/
 │       └── rest-best-practices.md
 ├── aws/                        # AWS Best Practices & Well-Architected
-│   ├── well-architected-framework.md
-│   ├── serverless/
-│   │   ├── serverless-best-practices.md
-│   │   └── serverless-patterns.md
-│   ├── security/
-│   │   ├── security-best-practices.md
-│   │   └── compliance-checklist.md
-│   ├── networking/
-│   │   └── networking-best-practices.md
-│   ├── compute/
-│   │   └── containers-best-practices.md
-│   ├── databases/
-│   │   └── databases-best-practices.md
-│   ├── observability/
-│   │   └── observability-best-practices.md
-│   ├── cost-optimization/
-│   │   └── cost-optimization-guide.md
-│   ├── cicd/
-│   │   └── cicd-best-practices.md
-│   ├── reliability/
-│   │   └── disaster-recovery.md
-│   ├── storage/
-│   │   └── storage-best-practices.md
-│   └── governance/
-│       └── multi-account-strategy.md
+│   ├── README.md
+│   ├── 01-well-architected-framework.md
+│   ├── 02-security-best-practices.md
+│   ├── 03-compliance-checklist.md
+│   ├── 04-containers-best-practices.md
+│   ├── 05-networking-best-practices.md
+│   ├── 06-storage-best-practices.md
+│   ├── 07-databases-best-practices.md
+│   ├── 08-serverless-best-practices.md
+│   ├── 09-serverless-patterns.md
+│   ├── 10-observability-best-practices.md
+│   ├── 11-cicd-best-practices.md
+│   ├── 12-cost-optimization-guide.md
+│   ├── 13-multi-account-strategy.md
+│   └── 14-disaster-recovery.md
 ├── data-engineering/            # Data Engineering (AWS-focused)
 │   ├── README.md
 │   ├── 01-data-architecture-foundations.md
@@ -84,33 +74,33 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   └── certifications/
 ├── microservice-patterns/      # Padrões de Microsserviços
 │   ├── README.md
-│   ├── api-composition.md
-│   ├── api-gateway-bff.md
-│   ├── backpressure.md
-│   ├── blue-green.md
-│   ├── bulkhead.md
-│   ├── canary-release.md
-│   ├── cdc.md
-│   ├── circuit-breaker.md
-│   ├── composicao-resiliencia.md
-│   ├── configuracao-externa.md
-│   ├── cqrs.md
-│   ├── dlq.md
-│   ├── event-sourcing.md
-│   ├── feature-flags.md
-│   ├── health-checks.md
-│   ├── idempotencia.md
-│   ├── observabilidade.md
-│   ├── outbox-pattern.md
-│   ├── rate-limiter.md
-│   ├── retry.md
-│   ├── saga.md
-│   ├── service-discovery.md
-│   ├── shadow-deployment.md
-│   ├── sharding-partitioning.md
-│   ├── sidecar.md
-│   ├── strangler-fig.md
-│   └── timeout.md
+│   ├── 01-circuit-breaker.md
+│   ├── 02-retry.md
+│   ├── 03-timeout.md
+│   ├── 04-rate-limiter.md
+│   ├── 05-bulkhead.md
+│   ├── 06-composicao-resiliencia.md
+│   ├── 07-idempotencia.md
+│   ├── 08-dlq.md
+│   ├── 09-saga.md
+│   ├── 10-api-composition.md
+│   ├── 11-cqrs.md
+│   ├── 12-event-sourcing.md
+│   ├── 13-outbox-pattern.md
+│   ├── 14-cdc.md
+│   ├── 15-sharding-partitioning.md
+│   ├── 16-backpressure.md
+│   ├── 17-service-discovery.md
+│   ├── 18-configuracao-externa.md
+│   ├── 19-health-checks.md
+│   ├── 20-api-gateway-bff.md
+│   ├── 21-sidecar.md
+│   ├── 22-strangler-fig.md
+│   ├── 23-blue-green.md
+│   ├── 24-canary-release.md
+│   ├── 25-feature-flags.md
+│   ├── 26-shadow-deployment.md
+│   └── 27-observabilidade.md
 ├── quality-engineering/        # Qualidade & Testes
 │   ├── README.md
 │   ├── 01-testing-strategy.md
@@ -199,12 +189,12 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
     ├── README.md
     └── aws/
         ├── README.md
-        ├── best-practices.md
-        ├── modules.md
-        ├── project-structure.md
-        ├── security.md
-        ├── state-management.md
-        └── testing.md
+        ├── 01-project-structure.md
+        ├── 02-best-practices.md
+        ├── 03-testing.md
+        ├── 04-modules.md
+        ├── 05-state-management.md
+        └── 06-security.md
 ```
 
 ## Conteúdo
