@@ -82,59 +82,59 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── README.md
 │   ├── best-practices/
 │   └── certifications/
-├── microservice-pattern/       # Padrões de Microsserviços
-│   ├── microservice-patterns.md
-│   └── patterns/
-│       ├── api-composition.md
-│       ├── api-gateway-bff.md
-│       ├── backpressure.md
-│       ├── blue-green.md
-│       ├── bulkhead.md
-│       ├── canary-release.md
-│       ├── cdc.md
-│       ├── circuit-breaker.md
-│       ├── composicao-resiliencia.md
-│       ├── configuracao-externa.md
-│       ├── cqrs.md
-│       ├── dlq.md
-│       ├── event-sourcing.md
-│       ├── feature-flags.md
-│       ├── health-checks.md
-│       ├── idempotencia.md
-│       ├── observabilidade.md
-│       ├── outbox-pattern.md
-│       ├── rate-limiter.md
-│       ├── retry.md
-│       ├── saga.md
-│       ├── service-discovery.md
-│       ├── shadow-deployment.md
-│       ├── sharding-partitioning.md
-│       ├── sidecar.md
-│       ├── strangler-fig.md
-│       └── timeout.md
+├── microservice-patterns/      # Padrões de Microsserviços
+│   ├── README.md
+│   ├── api-composition.md
+│   ├── api-gateway-bff.md
+│   ├── backpressure.md
+│   ├── blue-green.md
+│   ├── bulkhead.md
+│   ├── canary-release.md
+│   ├── cdc.md
+│   ├── circuit-breaker.md
+│   ├── composicao-resiliencia.md
+│   ├── configuracao-externa.md
+│   ├── cqrs.md
+│   ├── dlq.md
+│   ├── event-sourcing.md
+│   ├── feature-flags.md
+│   ├── health-checks.md
+│   ├── idempotencia.md
+│   ├── observabilidade.md
+│   ├── outbox-pattern.md
+│   ├── rate-limiter.md
+│   ├── retry.md
+│   ├── saga.md
+│   ├── service-discovery.md
+│   ├── shadow-deployment.md
+│   ├── sharding-partitioning.md
+│   ├── sidecar.md
+│   ├── strangler-fig.md
+│   └── timeout.md
 ├── quality-engineering/        # Qualidade & Testes
 │   ├── README.md
-│   ├── testing-strategy.md
-│   ├── test-automation-patterns.md
-│   ├── performance-testing.md
-│   ├── security-testing.md
-│   ├── code-review-quality.md
-│   └── observability-quality.md
+│   ├── 01-testing-strategy.md
+│   ├── 02-test-automation-patterns.md
+│   ├── 03-performance-testing.md
+│   ├── 04-security-testing.md
+│   ├── 05-code-review-quality.md
+│   └── 06-observability-quality.md
 ├── observability/              # Observabilidade Avançada
+│   ├── README.md
 │   ├── 01-observability-foundations.md
 │   ├── 02-distributed-tracing.md
 │   ├── 03-slos-slis-error-budgets.md
 │   ├── 04-opentelemetry.md
 │   └── 05-observability-driven-development.md
 ├── performance/                # Performance Engineering
+│   ├── README.md
 │   ├── 01-performance-foundations.md
 │   ├── 02-profiling-and-diagnostics.md
 │   ├── 03-capacity-planning.md
 │   ├── 04-benchmarking.md
 │   └── 05-latency-budgets.md
-├── solid/                      # Princípios SOLID
-│   └── solid-principles.md
 ├── tech-leadership/            # Tech Leadership & Staff+ Competencies
+│   ├── README.md
 │   ├── 01-leadership-foundations.md
 │   ├── 02-technical-vision.md
 │   ├── 03-organizational-influence.md
@@ -144,6 +144,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── 07-written-communication.md
 │   └── 08-failure-leadership.md
 ├── tech-strategy/              # Technical Strategy & Roadmaps
+│   ├── README.md
 │   ├── 01-tech-strategy-foundations.md
 │   ├── 02-build-vs-buy.md
 │   ├── 03-migration-strategies.md
@@ -223,7 +224,6 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 | **Quality Engineering** | Estratégia de testes, automação, performance testing, security testing, code review e observabilidade aplicada à qualidade |
 | **Observability** | Observabilidade avançada — fundamentos, distributed tracing, SLOs/SLIs/Error Budgets, OpenTelemetry, observability-driven development |
 | **Performance Engineering** | Performance engineering — fundamentos e métricas, profiling e diagnóstico, capacity planning, benchmarking e load testing, latency budgets e performance SLOs |
-| **SOLID** | Princípios SOLID aplicados |
 | **Tech Leadership** | Competências Staff+ — fundamentos de liderança técnica, visão técnica, influência organizacional, liderança cross-team, mentoria de seniors, business acumen, comunicação escrita, liderança em falhas |
 | **Tech Strategy** | Estratégia técnica — fundamentos e Tech Radar, build vs buy, estratégias de migração, quantificação de tech debt, construção e execução de roadmaps |
 | **System Design** | 43 tópicos de design de sistemas — conceitos fundamentais e case studies |

@@ -22,7 +22,7 @@
 
 ## Documentos
 
-### 1. [Estratégia de Testes](testing-strategy.md)
+### 1. [Estratégia de Testes](01-testing-strategy.md)
 
 Documento normativo que define a estratégia completa de testes — pirâmide de testes, padrões de escrita, estratégia por camada/componente, testes assíncronos e de resiliência, test doubles, quality gates no CI/CD e métricas.
 
@@ -33,7 +33,7 @@ Documento normativo que define a estratégia completa de testes — pirâmide de
 - Quality Gates no CI/CD e métricas de qualidade
 - Definition of Done (DoD) com checklists
 
-### 2. [Padrões de Automação de Testes](test-automation-patterns.md)
+### 2. [Padrões de Automação de Testes](02-test-automation-patterns.md)
 
 Receitas e padrões reutilizáveis para automação de testes — organização, criação de dados, setup/cleanup, asserções, testes de integração, API, assíncronos, banco de dados e refatoração.
 
@@ -44,7 +44,7 @@ Receitas e padrões reutilizáveis para automação de testes — organização,
 - Testes de integração, API e banco de dados
 - Receitas por linguagem (Java, Go, TypeScript)
 
-### 3. [Performance Testing](performance-testing.md)
+### 3. [Performance Testing](03-performance-testing.md)
 
 Guia completo de testes de performance — tipos de teste, metodologia, métricas e SLOs, ferramentas, padrões, análise de resultados e configuração de ambientes.
 
@@ -55,7 +55,7 @@ Guia completo de testes de performance — tipos de teste, metodologia, métrica
 - Análise de resultados e gargalos
 - Anti-patterns de performance testing
 
-### 4. [Security Testing](security-testing.md)
+### 4. [Security Testing](04-security-testing.md)
 
 Guia completo de testes de segurança — OWASP Top 10, SAST, DAST, SCA, segurança no CI/CD, APIs, containers, threat modeling e anti-patterns.
 
@@ -66,7 +66,7 @@ Guia completo de testes de segurança — OWASP Top 10, SAST, DAST, SCA, seguran
 - Segurança de APIs e containers
 - Threat Modeling e anti-patterns
 
-### 5. [Code Review & Quality](code-review-quality.md)
+### 5. [Code Review & Quality](05-code-review-quality.md)
 
 Guia de revisão de código — princípios, checklists por área, padrões de feedback, processo de review, métricas e anti-patterns.
 
@@ -76,7 +76,7 @@ Guia de revisão de código — princípios, checklists por área, padrões de f
 - Processo e fluxo de review
 - Métricas de review e anti-patterns
 
-### 6. [Observabilidade & Qualidade](observability-quality.md)
+### 6. [Observabilidade & Qualidade](06-observability-quality.md)
 
 Guia de monitoramento aplicado a Quality Engineering — três pilares da observabilidade, SLIs/SLOs/SLAs, logging, métricas, tracing distribuído, alertas e dashboards.
 

@@ -27,7 +27,7 @@
 
 ## Documentos
 
-### [Well-Architected Framework](well-architected-framework/well-architected-framework.md)
+### [Well-Architected Framework](well-architected-framework.md)
 
 Os **6 pilares** do AWS Well-Architected Framework — Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization e Sustainability — com boas práticas, anti-patterns e checklists.
 
