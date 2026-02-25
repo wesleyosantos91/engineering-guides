@@ -134,6 +134,15 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   └── 05-latency-budgets.md
 ├── solid/                      # Princípios SOLID
 │   └── solid-principles.md
+├── tech-leadership/            # Tech Leadership & Staff+ Competencies
+│   ├── 01-leadership-foundations.md
+│   ├── 02-technical-vision.md
+│   ├── 03-organizational-influence.md
+│   ├── 04-cross-team-leadership.md
+│   ├── 05-mentoring-seniors.md
+│   ├── 06-business-acumen.md
+│   ├── 07-written-communication.md
+│   └── 08-failure-leadership.md
 ├── tech-strategy/              # Technical Strategy & Roadmaps
 │   ├── 01-tech-strategy-foundations.md
 │   ├── 02-build-vs-buy.md
@@ -215,6 +224,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 | **Observability** | Observabilidade avançada — fundamentos, distributed tracing, SLOs/SLIs/Error Budgets, OpenTelemetry, observability-driven development |
 | **Performance Engineering** | Performance engineering — fundamentos e métricas, profiling e diagnóstico, capacity planning, benchmarking e load testing, latency budgets e performance SLOs |
 | **SOLID** | Princípios SOLID aplicados |
+| **Tech Leadership** | Competências Staff+ — fundamentos de liderança técnica, visão técnica, influência organizacional, liderança cross-team, mentoria de seniors, business acumen, comunicação escrita, liderança em falhas |
 | **Tech Strategy** | Estratégia técnica — fundamentos e Tech Radar, build vs buy, estratégias de migração, quantificação de tech debt, construção e execução de roadmaps |
 | **System Design** | 43 tópicos de design de sistemas — conceitos fundamentais e case studies |
 | **Terraform** | IaC com Terraform para AWS — estrutura, módulos, segurança e testes |
@@ -237,4 +247,5 @@ Cada guia de tecnologia (`project-structure.md`) já contém instruções para o
 | ADRs | `.docs/adrs/` |
 | Observability | `.docs/observability/` |
 | Performance Engineering | `.docs/performance/` |
+| Tech Leadership | `.docs/tech-leadership/` |
 | Tech Strategy | `.docs/tech-strategy/` |
