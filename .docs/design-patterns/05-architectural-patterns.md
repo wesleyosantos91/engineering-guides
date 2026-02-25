@@ -93,7 +93,7 @@ específica e só pode depender de camadas **inferiores** (ou adjacentes).
 | Camadas se tornam "passthrough" sem lógica | Simplificar ou colapsar camadas |
 | Múltiplos serviços precisam se comunicar | Considerar Event-Driven |
 
-> **Veja também:** [DIP em SOLID](../01-solid-principles/README.md#d--dependency-inversion-principle-dip), [Separation of Concerns](../06-best-practices/README.md#separation-of-concerns)
+> **Veja também:** [DIP em SOLID](01-solid-principles.md#d--dependency-inversion-principle-dip), [Separation of Concerns](06-best-practices.md#separation-of-concerns)
 
 ---
 
@@ -166,13 +166,13 @@ Proposta por **Alistair Cockburn** (2005). Também conhecida como "Ports and Ada
 
 | Pattern | Uso na Hexagonal |
 |---------|------------------|
-| [Adapter](../03-structural-patterns/README.md#adapter) | Driven/Driving adapters implementam as portas |
-| [Strategy](../04-behavioral-patterns/README.md#strategy) | Portas são essencialmente o padrão Strategy |
-| [Factory](../02-creational-patterns/README.md#factory-method) | Cria adapters específicos por ambiente (test, prod) |
-| [Facade](../03-structural-patterns/README.md#facade) | Application Service atua como Facade do domínio |
-| [Decorator](../03-structural-patterns/README.md#decorator) | Adiciona cross-cutting concerns nos adapters |
+| [Adapter](03-structural-patterns.md#adapter) | Driven/Driving adapters implementam as portas |
+| [Strategy](04-behavioral-patterns.md#strategy) | Portas são essencialmente o padrão Strategy |
+| [Factory](02-creational-patterns.md#factory-method) | Cria adapters específicos por ambiente (test, prod) |
+| [Facade](03-structural-patterns.md#facade) | Application Service atua como Facade do domínio |
+| [Decorator](03-structural-patterns.md#decorator) | Adiciona cross-cutting concerns nos adapters |
 
-> **Veja também:** [DIP em SOLID](../01-solid-principles/README.md#d--dependency-inversion-principle-dip), [Program to an Interface](../06-best-practices/README.md#program-to-an-interface-not-an-implementation)
+> **Veja também:** [DIP em SOLID](01-solid-principles.md#d--dependency-inversion-principle-dip), [Program to an Interface](06-best-practices.md#program-to-an-interface-not-an-implementation)
 
 ---
 
@@ -244,13 +244,13 @@ sempre para **dentro** (em direção ao domínio). Proposta por **Robert C. Mart
 
 | Pattern | Uso na Clean Architecture |
 |---------|---------------------------|
-| [Strategy](../04-behavioral-patterns/README.md#strategy) | Use Cases podem usar strategies para variações de regras |
-| [Command](../04-behavioral-patterns/README.md#command) | Use Cases frequentemente são modelados como Commands |
-| [Observer](../04-behavioral-patterns/README.md#observer) | Domain Events para notificação entre Use Cases |
-| [Adapter](../03-structural-patterns/README.md#adapter) | Interface Adapters convertem entre domínio e frameworks |
-| [Factory](../02-creational-patterns/README.md#factory-method) | Criação de entidades e value objects complexos |
+| [Strategy](04-behavioral-patterns.md#strategy) | Use Cases podem usar strategies para variações de regras |
+| [Command](04-behavioral-patterns.md#command) | Use Cases frequentemente são modelados como Commands |
+| [Observer](04-behavioral-patterns.md#observer) | Domain Events para notificação entre Use Cases |
+| [Adapter](03-structural-patterns.md#adapter) | Interface Adapters convertem entre domínio e frameworks |
+| [Factory](02-creational-patterns.md#factory-method) | Criação de entidades e value objects complexos |
 
-> **Veja também:** [SOLID](../01-solid-principles/README.md) (Clean Architecture é uma aplicação direta dos princípios SOLID em nível arquitetural)
+> **Veja também:** [SOLID](01-solid-principles.md) (Clean Architecture é uma aplicação direta dos princípios SOLID em nível arquitetural)
 
 ---
 
@@ -313,7 +313,7 @@ Separar a aplicação em três componentes interconectados: **dados** (Model),
 | Model contendo lógica de apresentação | Separar DTOs/ViewModels |
 | Regras de negócio em Controllers | Migrar para domínio (Hexagonal/Clean) |
 
-> **Veja também:** [Observer](../04-behavioral-patterns/README.md#observer) (Model-View usa Observer), [Strategy](../04-behavioral-patterns/README.md#strategy), [Facade](../03-structural-patterns/README.md#facade)
+> **Veja também:** [Observer](04-behavioral-patterns.md#observer) (Model-View usa Observer), [Strategy](04-behavioral-patterns.md#strategy), [Facade](03-structural-patterns.md#facade)
 
 ---
 
@@ -387,12 +387,12 @@ Proposto por **Greg Young**, baseado no princípio CQS (Command-Query Separation
 
 | Pattern | Uso no CQRS |
 |---------|-------------|
-| [Command](../04-behavioral-patterns/README.md#command) | Commands encapsulam intenções de escrita |
-| [Mediator](../04-behavioral-patterns/README.md#mediator) | Roteia commands/queries para handlers (ex: MediatR) |
-| [Observer](../04-behavioral-patterns/README.md#observer) | Eventos sincronizam read/write models |
-| [Strategy](../04-behavioral-patterns/README.md#strategy) | Diferentes estratégias de leitura/projeção |
+| [Command](04-behavioral-patterns.md#command) | Commands encapsulam intenções de escrita |
+| [Mediator](04-behavioral-patterns.md#mediator) | Roteia commands/queries para handlers (ex: MediatR) |
+| [Observer](04-behavioral-patterns.md#observer) | Eventos sincronizam read/write models |
+| [Strategy](04-behavioral-patterns.md#strategy) | Diferentes estratégias de leitura/projeção |
 
-> **Veja também:** [Event Sourcing](#event-sourcing), [Command Pattern](../04-behavioral-patterns/README.md#command)
+> **Veja também:** [Event Sourcing](#event-sourcing), [Command Pattern](04-behavioral-patterns.md#command)
 
 ---
 
@@ -448,11 +448,11 @@ em vez de armazenar apenas o último estado.
 
 | Pattern | Uso no Event Sourcing |
 |---------|-----------------------|
-| [Memento](../04-behavioral-patterns/README.md#memento) | Snapshots são essencialmente Mementos do aggregate |
-| [Observer](../04-behavioral-patterns/README.md#observer) | Projections são observers dos eventos |
-| [Command](../04-behavioral-patterns/README.md#command) | Commands geram eventos ao serem processados |
+| [Memento](04-behavioral-patterns.md#memento) | Snapshots são essencialmente Mementos do aggregate |
+| [Observer](04-behavioral-patterns.md#observer) | Projections são observers dos eventos |
+| [Command](04-behavioral-patterns.md#command) | Commands geram eventos ao serem processados |
 
-> **Veja também:** [CQRS](#cqrs--command-query-responsibility-segregation), [Imutabilidade](../06-best-practices/README.md#imutabilidade)
+> **Veja também:** [CQRS](#cqrs--command-query-responsibility-segregation), [Imutabilidade](06-best-practices.md#imutabilidade)
 
 ---
 
@@ -511,12 +511,12 @@ promovendo desacoplamento e reatividade.
 
 | Pattern | Uso no Event-Driven |
 |---------|---------------------|
-| [Observer](../04-behavioral-patterns/README.md#observer) | Pub/Sub é Observer distribuído |
-| [Mediator](../04-behavioral-patterns/README.md#mediator) | Message Broker atua como mediador |
-| [Chain of Responsibility](../04-behavioral-patterns/README.md#chain-of-responsibility) | Pipelines de processamento de eventos |
-| [Command](../04-behavioral-patterns/README.md#command) | Eventos podem carregar intenções de ação |
+| [Observer](04-behavioral-patterns.md#observer) | Pub/Sub é Observer distribuído |
+| [Mediator](04-behavioral-patterns.md#mediator) | Message Broker atua como mediador |
+| [Chain of Responsibility](04-behavioral-patterns.md#chain-of-responsibility) | Pipelines de processamento de eventos |
+| [Command](04-behavioral-patterns.md#command) | Eventos podem carregar intenções de ação |
 
-> **Veja também:** [Observer](../04-behavioral-patterns/README.md#observer), [Defensive Programming](../06-best-practices/README.md#defensive-programming) (idempotência é essencial)
+> **Veja também:** [Observer](04-behavioral-patterns.md#observer), [Defensive Programming](06-best-practices.md#defensive-programming) (idempotência é essencial)
 
 ---
 

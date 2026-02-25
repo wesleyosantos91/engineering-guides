@@ -52,12 +52,12 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   └── 05-architecture-integration.md
 ├── design-patterns/            # Design Patterns (agnóstico a linguagem)
 │   ├── README.md
-│   ├── architectural-patterns.md
-│   ├── behavioral-patterns.md
-│   ├── best-practices.md
-│   ├── creational-patterns.md
-│   ├── solid-principles.md
-│   └── structural-patterns.md
+│   ├── 01-solid-principles.md
+│   ├── 02-creational-patterns.md
+│   ├── 03-structural-patterns.md
+│   ├── 04-behavioral-patterns.md
+│   ├── 05-architectural-patterns.md
+│   └── 06-best-practices.md
 ├── golang/                     # Go
 │   ├── README.md
 │   └── gin/
