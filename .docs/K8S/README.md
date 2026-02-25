@@ -40,3 +40,4 @@ Esta base de conhecimento foi projetada para ser indexada e utilizada como conte
 - [CNCF Certifications](https://www.cncf.io/training/certification/)
 - [Kubernetes Blog](https://kubernetes.io/blog/)
 - [CNCF Landscape](https://landscape.cncf.io/)
+

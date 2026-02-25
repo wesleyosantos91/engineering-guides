@@ -120,3 +120,4 @@ Qual é o seu problema?
 | *Domain-Driven Design* | Eric Evans | 2003 |
 | *Refactoring: Improving the Design of Existing Code* | Martin Fowler | 2018 |
 | *Implementing Domain-Driven Design* | Vaughn Vernon | 2013 |
+
