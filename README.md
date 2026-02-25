@@ -58,16 +58,12 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   └── 06-best-practices.md
 ├── golang/                     # Go
 │   ├── README.md
-│   └── gin/
-│       └── README.md
+│   └── 01-gin.md
 ├── java/                       # Java
 │   ├── README.md
-│   ├── micronaut/
-│   │   └── README.md
-│   ├── quarkus/
-│   │   └── README.md
-│   └── spring/
-│       └── README.md
+│   ├── 01-spring.md
+│   ├── 02-quarkus.md
+│   └── 03-micronaut.md
 ├── k8s/                        # Kubernetes
 │   ├── README.md
 │   ├── 01-workloads-pod-design.md
@@ -239,10 +235,10 @@ Cada guia de tecnologia (`project-structure.md`) já contém instruções para o
 
 | Tecnologia | Arquivo |
 |------------|---------|
-| Spring Boot | `.docs/java/spring/README.md` |
-| Quarkus | `.docs/java/quarkus/README.md` |
-| Micronaut | `.docs/java/micronaut/README.md` |
-| Go (Gin) | `.docs/golang/gin/README.md` |
+| Spring Boot | `.docs/java/01-spring.md` |
+| Quarkus | `.docs/java/02-quarkus.md` |
+| Micronaut | `.docs/java/03-micronaut.md` |
+| Go (Gin) | `.docs/golang/01-gin.md` |
 | Terraform (AWS) | `.docs/terraform/aws/` |
 | AWS (Best Practices) | `.docs/aws/` |
 | Data Engineering | `.docs/data-engineering/` |
