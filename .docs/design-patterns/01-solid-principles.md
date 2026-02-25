@@ -1252,11 +1252,11 @@ R: Não. Herança é apropriada quando existe relação semântica "é-um" genu�
 
 | Princípio | Padrões que ajudam a aplicá-lo |
 |-----------|-------------------------------|
-| **SRP** | [Facade](../03-structural-patterns/README.md#facade), [Mediator](../04-behavioral-patterns/README.md#mediator), [Command](../04-behavioral-patterns/README.md#command) |
-| **OCP** | [Strategy](../04-behavioral-patterns/README.md#strategy), [Decorator](../03-structural-patterns/README.md#decorator), [Observer](../04-behavioral-patterns/README.md#observer), [Template Method](../04-behavioral-patterns/README.md#template-method) |
-| **LSP** | [Factory Method](../02-creational-patterns/README.md#factory-method), [Abstract Factory](../02-creational-patterns/README.md#abstract-factory) (garantem subtipos corretos) |
-| **ISP** | [Adapter](../03-structural-patterns/README.md#adapter), [Facade](../03-structural-patterns/README.md#facade) (expõem interfaces segregadas) |
-| **DIP** | [Abstract Factory](../02-creational-patterns/README.md#abstract-factory), [Strategy](../04-behavioral-patterns/README.md#strategy), [Hexagonal](../05-architectural-patterns/README.md#hexagonal-architecture-ports--adapters) |
+| **SRP** | [Facade](03-structural-patterns.md#facade), [Mediator](04-behavioral-patterns.md#mediator), [Command](04-behavioral-patterns.md#command) |
+| **OCP** | [Strategy](04-behavioral-patterns.md#strategy), [Decorator](03-structural-patterns.md#decorator), [Observer](04-behavioral-patterns.md#observer), [Template Method](04-behavioral-patterns.md#template-method) |
+| **LSP** | [Factory Method](02-creational-patterns.md#factory-method), [Abstract Factory](02-creational-patterns.md#abstract-factory) (garantem subtipos corretos) |
+| **ISP** | [Adapter](03-structural-patterns.md#adapter), [Facade](03-structural-patterns.md#facade) (expõem interfaces segregadas) |
+| **DIP** | [Abstract Factory](02-creational-patterns.md#abstract-factory), [Strategy](04-behavioral-patterns.md#strategy), [Hexagonal](05-architectural-patterns.md#hexagonal-architecture-ports--adapters) |
 
 ### Guia de decisão: qual princípio aplicar primeiro?
 
@@ -1281,7 +1281,7 @@ Analisando código problemático?
 
 > **Dica:** Design Patterns são **implementações concretas** dos princípios SOLID.
 > Entender SOLID primeiro torna o aprendizado de patterns muito mais natural.
-> **Veja também:** [Boas Práticas de Design](../06-best-practices/README.md), [Padrões Arquiteturais](../05-architectural-patterns/README.md)
+> **Veja também:** [Boas Práticas de Design](06-best-practices.md), [Padrões Arquiteturais](05-architectural-patterns.md)
 
 ---
 

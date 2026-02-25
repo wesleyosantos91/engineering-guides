@@ -19,9 +19,9 @@ Este guia serve como **base de conhecimento** para orientar decisões de design 
 
 | Paradigma | Protocolo | Formato | Melhor Para |
 |-----------|-----------|---------|-------------|
-| [**REST**](rest/rest-best-practices.md) | HTTP/1.1, HTTP/2 | JSON | APIs públicas, CRUD, web apps |
-| [**GraphQL**](graphql/graphql-best-practices.md) | HTTP/1.1, HTTP/2 | JSON | APIs flexíveis, BFF, múltiplos clients |
-| [**gRPC**](grpc/grpc-best-practices.md) | HTTP/2 | Protobuf (binário) | Microserviços internos, alta performance, streaming |
+| [**REST**](01-rest-best-practices.md) | HTTP/1.1, HTTP/2 | JSON | APIs públicas, CRUD, web apps |
+| [**GraphQL**](02-graphql-best-practices.md) | HTTP/1.1, HTTP/2 | JSON | APIs flexíveis, BFF, múltiplos clients |
+| [**gRPC**](03-grpc-best-practices.md) | HTTP/2 | Protobuf (binário) | Microserviços internos, alta performance, streaming |
 
 ---
 
@@ -114,9 +114,9 @@ Use estas perguntas para escolher o paradigma:
 
 | Documento | Descrição |
 |-----------|-----------|
-| [REST Best Practices](rest/rest-best-practices.md) | URIs, métodos HTTP, status codes, paginação, caching, segurança, OpenAPI |
-| [GraphQL Best Practices](graphql/graphql-best-practices.md) | Schema design, queries, mutations, pagination, federation, caching |
-| [gRPC Best Practices](grpc/grpc-best-practices.md) | Protobuf design, streaming, deadlines, interceptors, load balancing |
+| [REST Best Practices](01-rest-best-practices.md) | URIs, métodos HTTP, status codes, paginação, caching, segurança, OpenAPI |
+| [GraphQL Best Practices](02-graphql-best-practices.md) | Schema design, queries, mutations, pagination, federation, caching |
+| [gRPC Best Practices](03-grpc-best-practices.md) | Protobuf design, streaming, deadlines, interceptors, load balancing |
 
 ---
 

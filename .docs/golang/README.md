@@ -16,7 +16,7 @@
 
 | Framework | Descrição | Documento |
 |-----------|-----------|-----------|
-| [**Gin**](gin/README.md) | Framework HTTP de alta performance — o mais popular do ecossistema Go para APIs REST | Estrutura de pacotes, handlers, middlewares, configuração por environment |
+| [**Gin**](01-gin.md) | Framework HTTP de alta performance — o mais popular do ecossistema Go para APIs REST | Estrutura de pacotes, handlers, middlewares, configuração por environment |
 
 ---
 

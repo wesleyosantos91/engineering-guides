@@ -14,9 +14,9 @@
 
 | Framework | Descrição | Documento |
 |-----------|-----------|-----------|
-| [**Spring Boot**](spring/README.md) | Framework mais popular do ecossistema Java — convenção sobre configuração, vasto ecossistema de starters | Estrutura de pacotes, convenções, profiles, testes |
-| [**Quarkus**](quarkus/README.md) | Framework cloud-native otimizado para GraalVM e containers — startup rápido, baixo consumo de memória | Estrutura JAX-RS, CDI, Panache, configuração por profile |
-| [**Micronaut**](micronaut/README.md) | Framework com compile-time DI — sem reflection, ideal para microserviços e serverless | Estrutura de pacotes, DI em compile-time, configuração por environment |
+| [**Spring Boot**](01-spring.md) | Framework mais popular do ecossistema Java — convenção sobre configuração, vasto ecossistema de starters | Estrutura de pacotes, convenções, profiles, testes |
+| [**Quarkus**](02-quarkus.md) | Framework cloud-native otimizado para GraalVM e containers — startup rápido, baixo consumo de memória | Estrutura JAX-RS, CDI, Panache, configuração por profile |
+| [**Micronaut**](03-micronaut.md) | Framework com compile-time DI — sem reflection, ideal para microserviços e serverless | Estrutura de pacotes, DI em compile-time, configuração por environment |
 
 ---
 

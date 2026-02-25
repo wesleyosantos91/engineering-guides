@@ -2,7 +2,7 @@
 
 > **Agnóstico a linguagem** — Princípios, heurísticas e diretrizes que guiam decisões
 > de design independentemente da linguagem ou framework escolhidos.
-> Complementam os [princípios SOLID](../01-solid-principles/README.md) e são a base para um código sustentável.
+> Complementam os [princípios SOLID](01-solid-principles.md) e são a base para um código sustentável.
 
 ---
 
@@ -72,8 +72,8 @@ Quando muitas práticas competem por atenção, priorize nesta ordem:
 ### Regra prática
 
 > Se pensou em herança, pergunte: "Estou estendendo **comportamento** ou **tipo**?"
-> - Estendendo comportamento → **Composição** ([Strategy](../04-behavioral-patterns/README.md#strategy), [Decorator](../03-structural-patterns/README.md#decorator)).
-> - Estendendo tipo verdadeiro → **Herança** (com cuidado, respeitando [LSP](../01-solid-principles/README.md#l--liskov-substitution-principle-lsp)).
+> - Estendendo comportamento → **Composição** ([Strategy](04-behavioral-patterns.md#strategy), [Decorator](03-structural-patterns.md#decorator)).
+> - Estendendo tipo verdadeiro → **Herança** (com cuidado, respeitando [LSP](01-solid-principles.md#l--liskov-substitution-principle-lsp)).
 
 ---
 
@@ -106,10 +106,10 @@ DRY não é apenas sobre código duplicado. É sobre **conhecimento duplicado**:
 
 | Tipo de duplicação | Padrão recomendado |
 |-------------------|--------------------|
-| Lógica de criação de objetos | [Factory Method](../02-creational-patterns/README.md#factory-method), [Builder](../02-creational-patterns/README.md#builder) |
-| Algoritmos com estrutura comum | [Template Method](../04-behavioral-patterns/README.md#template-method), [Strategy](../04-behavioral-patterns/README.md#strategy) |
-| Cross-cutting concerns (log, cache) | [Decorator](../03-structural-patterns/README.md#decorator), [Proxy](../03-structural-patterns/README.md#proxy) |
-| Coordenação entre componentes | [Mediator](../04-behavioral-patterns/README.md#mediator), [Facade](../03-structural-patterns/README.md#facade) |
+| Lógica de criação de objetos | [Factory Method](02-creational-patterns.md#factory-method), [Builder](02-creational-patterns.md#builder) |
+| Algoritmos com estrutura comum | [Template Method](04-behavioral-patterns.md#template-method), [Strategy](04-behavioral-patterns.md#strategy) |
+| Cross-cutting concerns (log, cache) | [Decorator](03-structural-patterns.md#decorator), [Proxy](03-structural-patterns.md#proxy) |
+| Coordenação entre componentes | [Mediator](04-behavioral-patterns.md#mediator), [Facade](03-structural-patterns.md#facade) |
 
 ### WET — Write Everything Twice
 
@@ -370,7 +370,7 @@ account.withdraw(amount)  // lança exceção se saldo insuficiente
 | **Coesão** | Grau em que elementos de um módulo estão **relacionados entre si** | ALTA |
 | **Acoplamento** | Grau de **dependência** entre módulos | BAIXO |
 
-> **Relação com SOLID:** Alta coesão → [SRP](../01-solid-principles/README.md#s--single-responsibility-principle-srp). Baixo acoplamento → [DIP](../01-solid-principles/README.md#d--dependency-inversion-principle-dip) + [ISP](../01-solid-principles/README.md#i--interface-segregation-principle-isp).
+> **Relação com SOLID:** Alta coesão → [SRP](01-solid-principles.md#s--single-responsibility-principle-srp). Baixo acoplamento → [DIP](01-solid-principles.md#d--dependency-inversion-principle-dip) + [ISP](01-solid-principles.md#i--interface-segregation-principle-isp).
 
 ### Tipos de coesão (do pior para o melhor)
 
@@ -496,9 +496,9 @@ Ao revisar ou criar código, verifique:
 
 ### Testabilidade
 
-- [ ] Dependências são injetáveis (não hardcoded)? → [DIP](../01-solid-principles/README.md#d--dependency-inversion-principle-dip)
+- [ ] Dependências são injetáveis (não hardcoded)? → [DIP](01-solid-principles.md#d--dependency-inversion-principle-dip)
 - [ ] Efeitos colaterais são isoláveis?
-- [ ] Estado global é evitado? → [Singleton cuidados](../02-creational-patterns/README.md#singleton)
+- [ ] Estado global é evitado? → [Singleton cuidados](02-creational-patterns.md#singleton)
 - [ ] Comportamento é verificável via testes unitários?
 
-> **Veja também:** [Princípios SOLID](../01-solid-principles/README.md) para as bases teóricas, [Padrões Arquiteturais](../05-architectural-patterns/README.md) para organização macro.
+> **Veja também:** [Princípios SOLID](01-solid-principles.md) para as bases teóricas, [Padrões Arquiteturais](05-architectural-patterns.md) para organização macro.

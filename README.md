@@ -7,18 +7,16 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 ```
 .docs/
 ├── adrs/                       # Architecture Decision Records (ADRs)
+│   ├── README.md
 │   ├── 01-adr-foundations.md
 │   ├── 02-adr-writing-guide.md
 │   ├── 03-adr-governance-at-scale.md
 │   └── 04-adr-templates-examples.md
 ├── api/                        # API Design
-│   ├── api-guide.md
-│   ├── graphql/
-│   │   └── graphql-best-practices.md
-│   ├── grpc/
-│   │   └── grpc-best-practices.md
-│   └── rest/
-│       └── rest-best-practices.md
+│   ├── README.md
+│   ├── 01-rest-best-practices.md
+│   ├── 02-graphql-best-practices.md
+│   └── 03-grpc-best-practices.md
 ├── aws/                        # AWS Best Practices & Well-Architected
 │   ├── README.md
 │   ├── 01-well-architected-framework.md
@@ -35,7 +33,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── 12-cost-optimization-guide.md
 │   ├── 13-multi-account-strategy.md
 │   └── 14-disaster-recovery.md
-├── data-engineering/            # Data Engineering (AWS-focused)
+├── data-engineering/           # Data Engineering (AWS-focused)
 │   ├── README.md
 │   ├── 01-data-architecture-foundations.md
 │   ├── 02-data-storage.md
@@ -52,29 +50,39 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   └── 05-architecture-integration.md
 ├── design-patterns/            # Design Patterns (agnóstico a linguagem)
 │   ├── README.md
-│   ├── architectural-patterns.md
-│   ├── behavioral-patterns.md
-│   ├── best-practices.md
-│   ├── creational-patterns.md
-│   ├── solid-principles.md
-│   └── structural-patterns.md
+│   ├── 01-solid-principles.md
+│   ├── 02-creational-patterns.md
+│   ├── 03-structural-patterns.md
+│   ├── 04-behavioral-patterns.md
+│   ├── 05-architectural-patterns.md
+│   └── 06-best-practices.md
 ├── golang/                     # Go
 │   ├── README.md
-│   └── gin/
-│       └── README.md
+│   └── 01-gin.md
 ├── java/                       # Java
 │   ├── README.md
-│   ├── micronaut/
-│   │   └── README.md
-│   ├── quarkus/
-│   │   └── README.md
-│   └── spring/
-│       └── README.md
+│   ├── 01-spring.md
+│   ├── 02-quarkus.md
+│   └── 03-micronaut.md
 ├── k8s/                        # Kubernetes
 │   ├── README.md
-│   ├── best-practices/
-│   └── certifications/
-├── microservice-patterns/      # Padrões de Microsserviços
+│   ├── 01-workloads-pod-design.md
+│   ├── 02-security.md
+│   ├── 03-networking.md
+│   ├── 04-resource-management.md
+│   ├── 05-observability.md
+│   ├── 06-cicd-gitops.md
+│   ├── 07-storage.md
+│   ├── 08-high-availability.md
+│   ├── 09-configuration.md
+│   ├── 10-cluster-operations.md
+│   ├── 11-kcna.md
+│   ├── 12-ckad.md
+│   ├── 13-cka.md
+│   ├── 14-cks.md
+│   ├── 15-kcsa.md
+│   └── 16-kubestronaut.md
+├── microservice-patterns/     # Padrões de Microsserviços
 │   ├── README.md
 │   ├── 01-circuit-breaker.md
 │   ├── 02-retry.md
@@ -103,7 +111,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── 25-feature-flags.md
 │   ├── 26-shadow-deployment.md
 │   └── 27-observabilidade.md
-├── quality-engineering/        # Qualidade & Testes
+├── quality-engineering/       # Qualidade & Testes
 │   ├── README.md
 │   ├── 01-testing-strategy.md
 │   ├── 02-test-automation-patterns.md
@@ -111,21 +119,21 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── 04-security-testing.md
 │   ├── 05-code-review-quality.md
 │   └── 06-observability-quality.md
-├── observability/              # Observabilidade Avançada
+├── observability/             # Observabilidade Avançada
 │   ├── README.md
 │   ├── 01-observability-foundations.md
 │   ├── 02-distributed-tracing.md
 │   ├── 03-slos-slis-error-budgets.md
 │   ├── 04-opentelemetry.md
 │   └── 05-observability-driven-development.md
-├── performance/                # Performance Engineering
+├── performance/               # Performance Engineering
 │   ├── README.md
 │   ├── 01-performance-foundations.md
 │   ├── 02-profiling-and-diagnostics.md
 │   ├── 03-capacity-planning.md
 │   ├── 04-benchmarking.md
 │   └── 05-latency-budgets.md
-├── tech-leadership/            # Tech Leadership & Staff+ Competencies
+├── tech-leadership/           # Tech Leadership & Staff+ Competencies
 │   ├── README.md
 │   ├── 01-leadership-foundations.md
 │   ├── 02-technical-vision.md
@@ -135,7 +143,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── 06-business-acumen.md
 │   ├── 07-written-communication.md
 │   └── 08-failure-leadership.md
-├── tech-strategy/              # Technical Strategy & Roadmaps
+├── tech-strategy/             # Technical Strategy & Roadmaps
 │   ├── README.md
 │   ├── 01-tech-strategy-foundations.md
 │   ├── 02-build-vs-buy.md
@@ -227,10 +235,10 @@ Cada guia de tecnologia (`project-structure.md`) já contém instruções para o
 
 | Tecnologia | Arquivo |
 |------------|---------|
-| Spring Boot | `.docs/java/spring/project-structure.md` |
-| Quarkus | `.docs/java/quarkus/project-structure.md` |
-| Micronaut | `.docs/java/micronaut/project-structure.md` |
-| Go (Gin) | `.docs/golang/gin/project-structure.md` |
+| Spring Boot | `.docs/java/01-spring.md` |
+| Quarkus | `.docs/java/02-quarkus.md` |
+| Micronaut | `.docs/java/03-micronaut.md` |
+| Go (Gin) | `.docs/golang/01-gin.md` |
 | Terraform (AWS) | `.docs/terraform/aws/` |
 | AWS (Best Practices) | `.docs/aws/` |
 | Data Engineering | `.docs/data-engineering/` |
