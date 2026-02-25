@@ -126,6 +126,12 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │   ├── 03-slos-slis-error-budgets.md
 │   ├── 04-opentelemetry.md
 │   └── 05-observability-driven-development.md
+├── performance/                # Performance Engineering
+│   ├── 01-performance-foundations.md
+│   ├── 02-profiling-and-diagnostics.md
+│   ├── 03-capacity-planning.md
+│   ├── 04-benchmarking.md
+│   └── 05-latency-budgets.md
 ├── solid/                      # Princípios SOLID
 │   └── solid-principles.md
 ├── system-design/              # System Design
@@ -201,6 +207,7 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 | **Microservice Patterns** | 27 padrões essenciais para arquitetura de microsserviços |
 | **Quality Engineering** | Estratégia de testes, automação, performance testing, security testing, code review e observabilidade aplicada à qualidade |
 | **Observability** | Observabilidade avançada — fundamentos, distributed tracing, SLOs/SLIs/Error Budgets, OpenTelemetry, observability-driven development |
+| **Performance Engineering** | Performance engineering — fundamentos e métricas, profiling e diagnóstico, capacity planning, benchmarking e load testing, latency budgets e performance SLOs |
 | **SOLID** | Princípios SOLID aplicados |
 | **System Design** | 43 tópicos de design de sistemas — conceitos fundamentais e case studies |
 | **Terraform** | IaC com Terraform para AWS — estrutura, módulos, segurança e testes |
@@ -222,3 +229,4 @@ Cada guia de tecnologia (`project-structure.md`) já contém instruções para o
 | Kubernetes | `.docs/k8s/` |
 | ADRs | `.docs/adrs/` |
 | Observability | `.docs/observability/` |
+| Performance Engineering | `.docs/performance/` |
