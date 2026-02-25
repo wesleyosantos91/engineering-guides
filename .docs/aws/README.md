@@ -27,59 +27,59 @@
 
 ## Documentos
 
-### [Well-Architected Framework](well-architected-framework.md)
+### [Well-Architected Framework](01-well-architected-framework.md)
 
 Os **6 pilares** do AWS Well-Architected Framework — Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization e Sustainability — com boas práticas, anti-patterns e checklists.
 
-### [Security — Boas Práticas](security/security-best-practices.md)
+### [Security — Boas Práticas](02-security-best-practices.md)
 
 Segurança defense in depth na AWS — **IAM**, criptografia, gerenciamento de secrets, network security, detecção de ameaças, compliance e responsabilidade compartilhada.
 
-### [Security — Compliance Checklist](security/compliance-checklist.md)
+### [Security — Compliance Checklist](03-compliance-checklist.md)
 
 Checklist de compliance para workloads regulados — LGPD, GDPR, HIPAA, PCI-DSS, SOC 2 — com serviços AWS e controles necessários.
 
-### [Compute — Containers](compute/containers-best-practices.md)
+### [Compute — Containers](04-containers-best-practices.md)
 
 Boas práticas para orquestração de containers na AWS — **ECS vs EKS vs App Runner**, Fargate, networking, segurança, CI/CD e observabilidade de containers.
 
-### [Networking — Boas Práticas](networking/networking-best-practices.md)
+### [Networking — Boas Práticas](05-networking-best-practices.md)
 
 Arquitetura de rede na AWS — **VPC design**, subnets, security groups, NACLs, load balancers, CloudFront, Route 53, Transit Gateway e conectividade híbrida.
 
-### [Storage — Boas Práticas](storage/storage-best-practices.md)
+### [Storage — Boas Práticas](06-storage-best-practices.md)
 
 Serviços de armazenamento na AWS — **S3** (tiers, lifecycle, replication), **EBS**, **EFS**, **FSx** — quando usar cada um, otimizações e anti-patterns.
 
-### [Databases — Boas Práticas](databases/databases-best-practices.md)
+### [Databases — Boas Práticas](07-databases-best-practices.md)
 
 Bancos de dados managed na AWS — **RDS, Aurora, DynamoDB, ElastiCache, Neptune** — escolha do engine, modelagem, performance tuning e operações.
 
-### [Serverless — Boas Práticas](serverless/serverless-best-practices.md)
+### [Serverless — Boas Práticas](08-serverless-best-practices.md)
 
 Boas práticas de desenvolvimento serverless — **Lambda**, API Gateway, Step Functions, EventBridge — cold starts, limites, segurança e observabilidade.
 
-### [Serverless — Patterns](serverless/serverless-patterns.md)
+### [Serverless — Patterns](09-serverless-patterns.md)
 
 Patterns de arquitetura serverless — API backend, event processing, data pipeline, scheduled jobs, fan-out, saga e circuit breaker com serviços serverless.
 
-### [Observability — Boas Práticas](observability/observability-best-practices.md)
+### [Observability — Boas Práticas](10-observability-best-practices.md)
 
 Observabilidade na AWS — **CloudWatch** (métricas, logs, alarms), **X-Ray** (tracing distribuído), **OpenTelemetry**, dashboards e alerting.
 
-### [CI/CD — Boas Práticas](cicd/cicd-best-practices.md)
+### [CI/CD — Boas Práticas](11-cicd-best-practices.md)
 
 Pipelines de CI/CD na AWS — **CodePipeline, CodeBuild, CodeDeploy**, CDK Pipelines, deploy strategies (blue/green, canary, rolling) e GitOps.
 
-### [Cost Optimization](cost-optimization/cost-optimization-guide.md)
+### [Cost Optimization](12-cost-optimization-guide.md)
 
 FinOps e otimização de custos na AWS — **Cost Explorer, Savings Plans, Reserved Instances, Spot, Compute Optimizer**, tagging strategy e budgets.
 
-### [Governance — Multi-Account Strategy](governance/multi-account-strategy.md)
+### [Governance — Multi-Account Strategy](13-multi-account-strategy.md)
 
 Estratégia multi-account na AWS — **Organizations, Control Tower, SCPs**, landing zone, OU structure e guardrails.
 
-### [Reliability — Disaster Recovery](reliability/disaster-recovery.md)
+### [Reliability — Disaster Recovery](14-disaster-recovery.md)
 
 Disaster recovery na AWS — estratégias **Backup & Restore, Pilot Light, Warm Standby, Active-Active**, RPO/RTO, multi-AZ, cross-region e runbooks.
 

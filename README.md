@@ -21,31 +21,20 @@ Guias pessoais de organização, convenções e padrões de código por tecnolog
 │       └── rest-best-practices.md
 ├── aws/                        # AWS Best Practices & Well-Architected
 │   ├── README.md
-│   ├── well-architected-framework.md
-│   ├── serverless/
-│   │   ├── serverless-best-practices.md
-│   │   └── serverless-patterns.md
-│   ├── security/
-│   │   ├── security-best-practices.md
-│   │   └── compliance-checklist.md
-│   ├── networking/
-│   │   └── networking-best-practices.md
-│   ├── compute/
-│   │   └── containers-best-practices.md
-│   ├── databases/
-│   │   └── databases-best-practices.md
-│   ├── observability/
-│   │   └── observability-best-practices.md
-│   ├── cost-optimization/
-│   │   └── cost-optimization-guide.md
-│   ├── cicd/
-│   │   └── cicd-best-practices.md
-│   ├── reliability/
-│   │   └── disaster-recovery.md
-│   ├── storage/
-│   │   └── storage-best-practices.md
-│   └── governance/
-│       └── multi-account-strategy.md
+│   ├── 01-well-architected-framework.md
+│   ├── 02-security-best-practices.md
+│   ├── 03-compliance-checklist.md
+│   ├── 04-containers-best-practices.md
+│   ├── 05-networking-best-practices.md
+│   ├── 06-storage-best-practices.md
+│   ├── 07-databases-best-practices.md
+│   ├── 08-serverless-best-practices.md
+│   ├── 09-serverless-patterns.md
+│   ├── 10-observability-best-practices.md
+│   ├── 11-cicd-best-practices.md
+│   ├── 12-cost-optimization-guide.md
+│   ├── 13-multi-account-strategy.md
+│   └── 14-disaster-recovery.md
 ├── data-engineering/            # Data Engineering (AWS-focused)
 │   ├── README.md
 │   ├── 01-data-architecture-foundations.md
