@@ -14,12 +14,12 @@
 
 | Documento | Descrição |
 |-----------|-----------|
-| [project-structure.md](project-structure.md) | Estrutura de diretórios, organização de módulos e workspaces |
-| [best-practices.md](best-practices.md) | Boas práticas gerais, check blocks, ephemeral values, provider functions |
-| [testing.md](testing.md) | Testes unitários, de integração, contract tests e compliance |
-| [modules.md](modules.md) | Criação, versionamento e consumo de módulos reutilizáveis |
-| [state-management.md](state-management.md) | Gerenciamento de state — backends, native S3 locking, isolation |
-| [security.md](security.md) | Segurança, IAM, secrets, ephemeral values, scanning e compliance na AWS |
+| [01-project-structure.md](01-project-structure.md) | Estrutura de diretórios, organização de módulos e workspaces |
+| [02-best-practices.md](02-best-practices.md) | Boas práticas gerais, check blocks, ephemeral values, provider functions |
+| [03-testing.md](03-testing.md) | Testes unitários, de integração, contract tests e compliance |
+| [04-modules.md](04-modules.md) | Criação, versionamento e consumo de módulos reutilizáveis |
+| [05-state-management.md](05-state-management.md) | Gerenciamento de state — backends, native S3 locking, isolation |
+| [06-security.md](06-security.md) | Segurança, IAM, secrets, ephemeral values, scanning e compliance na AWS |
 
 ---
 
