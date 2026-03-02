@@ -15,6 +15,7 @@
 | [03-capacity-planning](03-capacity-planning.md) | Capacity Planning — load modeling, forecasting, right-sizing, scaling strategies e cost optimization |
 | [04-benchmarking](04-benchmarking.md) | Benchmarking e Load Testing — microbenchmarks, load/stress testing, rigor estatístico, CI/CD integration e regression detection |
 | [05-latency-budgets](05-latency-budgets.md) | Latency Budgets e Performance SLOs — alocação por componente, tail latency, fan-out problem e otimização end-to-end |
+| [06-dora-space-metrics](06-dora-space-metrics.md) | DORA Metrics & SPACE Framework — métricas de delivery (DF, LT, CFR, MTTR), developer productivity (5 dimensões SPACE), benchmarks, instrumentação e anti-patterns |
 
 ---
 
@@ -27,5 +28,6 @@ O que você quer entender sobre performance?
 ├─ Identificar gargalos (profiling) → 02-profiling-and-diagnostics
 ├─ Planejar capacidade → 03-capacity-planning
 ├─ Medir e validar (benchmarking) → 04-benchmarking
-└─ Definir budgets de latência e SLOs → 05-latency-budgets
+├─ Definir budgets de latência e SLOs → 05-latency-budgets
+└─ Medir delivery & produtividade (DORA/SPACE) → 06-dora-space-metrics
 ```
