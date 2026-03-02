@@ -225,6 +225,113 @@ public record UserController(UserService userService) implements UserOpenApi {
 
 ---
 
+## Extensão: gRPC como Protocolo Alternativo
+
+Implemente os mesmos endpoints do Level 1 usando **gRPC** como alternativa ao REST, para entender trade-offs entre os dois paradigmas.
+
+### Por que gRPC?
+
+| Aspecto | REST (JSON/HTTP) | gRPC (Protobuf/HTTP2) |
+|---|---|---|
+| **Formato** | JSON (texto) | Protobuf (binário) |
+| **Performance** | Bom | ~7-10x mais rápido (serialização) |
+| **Contract** | OpenAPI (opt-in) | `.proto` (obrigatório) |
+| **Streaming** | SSE / WebSocket | Nativo (unary, server, client, bidi) |
+| **Code gen** | Opcional | Obrigatório (protoc / buf) |
+| **Ecossistema** | Universal (browsers, curl, etc) | Backends, microserviços |
+| **Quando usar** | APIs públicas, CRUD | Comunicação interna entre serviços |
+
+### Contrato Protobuf
+
+```protobuf
+// proto/wallet/v1/user.proto
+syntax = "proto3";
+package wallet.v1;
+
+option go_package = "github.com/org/wallet/gen/wallet/v1";
+option java_package = "com.novapay.wallet.grpc.v1";
+
+service UserService {
+  rpc CreateUser(CreateUserRequest) returns (UserResponse);
+  rpc GetUser(GetUserRequest) returns (UserResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (UserResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
+}
+
+message CreateUserRequest {
+  string name = 1;
+  string email = 2;
+  string document = 3;
+}
+
+message UserResponse {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string document = 4;
+  string status = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message ListUsersRequest {
+  int32 page = 1;
+  int32 size = 2;
+  string sort = 3;
+}
+
+message ListUsersResponse {
+  repeated UserResponse users = 1;
+  int32 total_elements = 2;
+  int32 total_pages = 3;
+}
+```
+
+### Tooling por Stack
+
+| Stack | gRPC Framework | Code Gen | Reflection |
+|---|---|---|---|
+| **Go** | `google.golang.org/grpc` | `buf generate` ou `protoc-gen-go-grpc` | `grpcurl` + reflection server |
+| **Spring Boot** | `grpc-spring-boot-starter` (LogNet ou grpc-ecosystem) | `protobuf-maven-plugin` | Spring gRPC Server auto-config |
+| **Quarkus** | `quarkus-grpc` | Build-time geração automática | SmallRye gRPC |
+| **Micronaut** | `micronaut-grpc` | `protobuf-gradle-plugin` | Micronaut gRPC server |
+| **Jakarta EE** | Manual (io.grpc + CDI beans) | `protoc` direto | — |
+
+### Buf (Build Tool para Protobuf)
+
+```yaml
+# buf.yaml
+version: v2
+modules:
+  - path: proto
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE
+```
+
+```bash
+# Gerar código Go + Java
+buf generate
+
+# Lint nos .proto
+buf lint
+
+# Verificar breaking changes
+buf breaking --against 'https://github.com/org/wallet.git#branch=main'
+```
+
+> **Critérios de aceite (gRPC):**
+> - [ ] Contratos `.proto` definidos para `UserService` (CRUD)
+> - [ ] Servidor gRPC rodando em paralelo à API REST (porta diferente)
+> - [ ] Testável via `grpcurl` ou `evans` (gRPC CLI)
+> - [ ] Code generation via `buf` (Go) ou protobuf-maven-plugin (Java)
+> - [ ] Breaking change detection configurado (`buf breaking`)
+
+---
+
 ## Erros Comuns
 
 | Erro | Stack | Como evitar |

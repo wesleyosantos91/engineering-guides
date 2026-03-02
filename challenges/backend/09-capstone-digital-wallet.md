@@ -589,6 +589,202 @@ watch -n 5 'docker stats --no-stream api-go api-spring api-quarkus api-micronaut
 - [ ] Cenário 5 (Memory): nenhum OOM em 10 minutos de carga sustentada
 - [ ] Todos os cenários documentados com evidências (screenshots, métricas, logs)
 
+### 3.2 — Chaos Engineering Estruturado com LitmusChaos
+
+Além dos cenários manuais acima, use **LitmusChaos** para executar experimentos de caos de forma declarativa e reprodutível no Kubernetes.
+
+**Setup LitmusChaos:**
+
+```bash
+# Instalar LitmusChaos no cluster
+kubectl apply -f https://litmuschaos.github.io/litmus/3.0.0/litmus-3.0.0.yaml
+
+# Instalar Chaos Hub (catálogo de experimentos)
+kubectl apply -f https://hub.litmuschaos.io/api/chaos/3.0.0/charts/generic/experiments.yaml
+```
+
+**Experimento 1: Pod Kill**
+
+```yaml
+# chaos/pod-kill.yaml
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: wallet-pod-kill
+  namespace: digital-wallet
+spec:
+  appinfo:
+    appns: digital-wallet
+    applabel: app=wallet-api
+    appkind: deployment
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: FORCE
+              value: "true"
+  # Validação: durante o experimento, verificar que:
+  # - Kubernetes recria o pod automaticamente
+  # - Requests são redistribuídos para pods saudáveis
+  # - Zero downtime (load balancer remove pod unhealthy)
+  # - Métricas: error rate não excede 0.5% durante o experimento
+```
+
+**Experimento 2: Network Latency**
+
+```yaml
+# chaos/network-latency.yaml
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: wallet-network-delay
+  namespace: digital-wallet
+spec:
+  appinfo:
+    appns: digital-wallet
+    applabel: app=wallet-api
+    appkind: deployment
+  experiments:
+    - name: pod-network-latency
+      spec:
+        components:
+          env:
+            - name: NETWORK_INTERFACE
+              value: "eth0"
+            - name: NETWORK_LATENCY
+              value: "2000"   # 2000ms de latência
+            - name: TOTAL_CHAOS_DURATION
+              value: "120"
+            - name: DESTINATION_IPS
+              value: "postgres-svc"  # latência apenas para o DB
+```
+
+**Experimento 3: Disk Fill (via Service Mesh)**
+
+Se estiver usando Istio/Linkerd (Level 7), combine fault injection do mesh com LitmusChaos:
+
+```yaml
+# Istio VirtualService — inject 503 em 20% dos requests para exchange-rate-api
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: chaos-exchange-rate
+spec:
+  hosts:
+    - exchange-rate-api
+  http:
+    - fault:
+        abort:
+          percentage:
+            value: 20
+          httpStatus: 503
+      route:
+        - destination:
+            host: exchange-rate-api
+```
+
+**Critérios de aceite (LitmusChaos):**
+- [ ] LitmusChaos instalado e funcional no cluster K8s
+- [ ] Experimento `pod-delete`: app se recupera em < 30s, zero tx loss
+- [ ] Experimento `network-latency`: circuit breaker ativa, timeout funciona
+- [ ] Experimentos declarativos (YAML) e reprodutíveis via `kubectl apply`
+- [ ] Resultados do experimento documentados com métricas do Grafana
+
+### 3.3 — SRE Runbooks e Incident Response
+
+Documente runbooks operacionais para os cenários de falha mais comuns. Estes runbooks são referenciados nos alertas do Prometheus (campo `runbook`).
+
+**Runbook 1: High Error Rate (> 0.1%)**
+
+```markdown
+# Runbook: High Error Rate
+
+## Alerta
+- Nome: `HighErrorRate`
+- Threshold: error rate > 0.1% por 5 minutos
+- Severidade: CRITICAL
+
+## Diagnóstico
+1. Verificar Grafana dashboard RED — qual endpoint está falhando?
+2. Verificar logs (Loki/stdout): `{app="wallet-api"} |= "ERROR" | json`
+3. Verificar últimos deploys: `helm history wallet -n digital-wallet`
+4. Verificar dependências (DB, Kafka, external APIs):
+   - DB: `kubectl exec -it postgres -- pg_isready`
+   - Kafka: verificar consumer lag no dashboard
+   - Circuit breakers: verificar estado no dashboard
+
+## Ações
+- Se causado por deploy recente: `helm rollback wallet <revision>`
+- Se causado por DB: verificar connection pool, restart se necessário
+- Se causado por Kafka: verificar broker health, consumer lag
+- Se causa desconhecida: escalar para on-call senior
+
+## Comunicação
+- Atualizar status page
+- Notificar canais #incidents no Slack
+- Após resolução: criar post-mortem em 48h
+```
+
+**Runbook 2: SLO Burn Rate Alto**
+
+```markdown
+# Runbook: SLO Burn Rate Alto
+
+## Alerta
+- Nome: `SLOBurnRateHigh`
+- Threshold: queimando error budget 14.4x mais rápido que o normal (1h window)
+- Severidade: CRITICAL
+
+## Diagnóstico
+1. Verificar error budget restante (SLO dashboard)
+2. Identificar top 5 endpoints por error count
+3. Verificar se há deploy em andamento
+
+## Ações
+- Se error budget < 20%: congelar deploys não-críticos
+- Se error budget < 5%: rollback última mudança, focar 100% em reliability
+- Implementar fix → validar em staging → deploy com canary (10% tráfego)
+
+## Prevenção
+- Aumentar cobertura de testes de integração
+- Adicionar chaos testing no CI pipeline (smoke chaos)
+- Review de PRR antes de deploys
+```
+
+**Incident Response Drill (Game Day):**
+
+```bash
+# Simular incident response completo (1h exercise)
+# 1. Injetar falha (sem avisar o time)
+kubectl apply -f chaos/pod-kill.yaml
+
+# 2. Time detecta via alertas (< 5 min para detectar)
+
+# 3. Seguir runbook correspondente
+
+# 4. Resolver (< 15 min para mitigar)
+
+# 5. Post-mortem com timeline:
+#    - T+0: falha injetada
+#    - T+N: alerta disparou
+#    - T+N: runbook iniciado
+#    - T+N: falha mitigada
+#    - T+N: causa raiz confirmada
+#    - Total MTTR: X minutos
+```
+
+**Critérios de aceite (Runbooks):**
+- [ ] ≥ 3 runbooks documentados (cobrindo os alertas mais críticos)
+- [ ] Cada runbook referenciado no campo `runbook` do alerta Prometheus
+- [ ] Game day executado: incident response drill com timeline documentado
+- [ ] MTTR (Mean Time to Recovery) medido: target < 15 min para P1
+
 ---
 
 ## Parte 4 — Observabilidade em Ação

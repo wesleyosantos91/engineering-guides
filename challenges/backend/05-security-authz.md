@@ -341,13 +341,205 @@ public class AdminUserResource {
 
 ## Extensões Opcionais
 
-- [ ] Integrar com Keycloak como Identity Provider externo
 - [ ] Implementar OAuth2 Authorization Code Flow
 - [ ] Adicionar MFA (Multi-Factor Authentication) via TOTP
 - [ ] Implementar API key authentication para serviços externos
 - [ ] Adicionar audit log para ações administrativas
 - [ ] Implementar password policy (mínimo 8 chars, uppercase, number, special)
 - [ ] CORS dinâmico (allowed origins via config/banco)
+
+---
+
+## Extensão: Keycloak como Identity Provider Corporativo
+
+Para cenários enterprise, substitua a autenticação manual por um Identity Provider (IdP) centralizado.
+
+### Por que Keycloak?
+
+| Aspecto | JWT Manual (Level 5 base) | Keycloak IdP |
+|---|---|---|
+| **User management** | Tabela `users` no app DB | Console Keycloak (realms, clients) |
+| **Token issuance** | Endpoint `/auth/login` custom | Keycloak OIDC `/token` endpoint |
+| **SSO** | Não suportado | Built-in (entre apps do mesmo realm) |
+| **MFA** | Implementação manual | Config no Keycloak (TOTP, WebAuthn) |
+| **Federation** | Não | LDAP, Active Directory, Social Login |
+| **Protocolo** | JWT custom | OpenID Connect (OIDC) padrão |
+
+### Setup do Keycloak
+
+```yaml
+# docker-compose.yml
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+```
+
+### Configuração por Stack
+
+| Stack | Configuração |
+|---|---|
+| **Go (Gin)** | Middleware OIDC com `coreos/go-oidc` — valida JWT do Keycloak via JWKS endpoint |
+| **Spring Boot** | `spring-boot-starter-oauth2-resource-server` + `spring.security.oauth2.resourceserver.jwt.issuer-uri` |
+| **Quarkus** | `quarkus-oidc` + `quarkus.oidc.auth-server-url` + `@RolesAllowed` |
+| **Micronaut** | `micronaut-security-oauth2` + `micronaut.security.oauth2.clients.keycloak.*` |
+| **Jakarta EE** | MicroProfile JWT + `mp.jwt.verify.issuer` + `mp.jwt.verify.publickey.location` |
+
+### Realm Configuration
+
+```json
+{
+  "realm": "novapay",
+  "enabled": true,
+  "clients": [{
+    "clientId": "wallet-api",
+    "enabled": true,
+    "bearerOnly": true,
+    "defaultClientScopes": ["openid", "profile", "email"]
+  }],
+  "roles": {
+    "realm": [
+      { "name": "USER" },
+      { "name": "ADMIN" },
+      { "name": "AUDITOR" }
+    ]
+  }
+}
+```
+
+### Integração com API Gateway (Kong)
+
+Quando combinado com Kong (Level 7), use o **OIDC plugin do Kong** para delegar autenticação ao Keycloak:
+
+```
+Client → Kong (OIDC Plugin) → Keycloak (valida token) → API Backend (recebe claims no header)
+```
+
+> **Critérios de aceite (Keycloak):**
+> - [ ] Keycloak rodando via Docker Compose com realm `novapay` importado
+> - [ ] Roles `USER`, `ADMIN`, `AUDITOR` configurados no realm
+> - [ ] API valida JWT emitido pelo Keycloak (JWKS endpoint)
+> - [ ] `@RolesAllowed` / RBAC funciona com roles do Keycloak
+> - [ ] Endpoints protegidos retornam 401/403 corretamente
+
+---
+
+## Extensão: Supply Chain Security
+
+Proteja toda a cadeia de fornecimento de software — do código-fonte à imagem de produção.
+
+### Pilares de Supply Chain Security
+
+```
+┌───────────────────────────────────────────────────────────┐
+│                SUPPLY CHAIN SECURITY                      │
+│                                                           │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐ │
+│  │  Código   │→│  Build   │→│  Imagem  │→│  Deploy  │ │
+│  │  (SAST)   │  │  (SBOM)  │  │ (Scan)   │  │ (Sign)   │ │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘ │
+│                                                           │
+│  CodeQL/       Syft          Trivy/Grype    Cosign        │
+│  SonarQube     CycloneDX     Snyk           Sigstore      │
+└───────────────────────────────────────────────────────────┘
+```
+
+### 1. Vulnerability Scanning com Trivy
+
+```bash
+# Scan vulnerabilidades na imagem Docker
+trivy image --severity HIGH,CRITICAL wallet-api-go:latest
+
+# Scan no filesystem (dependências do projeto)
+trivy fs --scanners vuln,secret,misconfig .
+
+# Scan no Dockerfile (misconfigurations)
+trivy config Dockerfile
+
+# Ignorar CVEs aceitas (risk accepted)
+trivy image --ignorefile .trivyignore wallet-api-go:latest
+```
+
+```
+# .trivyignore
+# Aceitas com justificativa
+CVE-2023-XXXX  # Não afeta nosso uso — lib apenas em dev
+```
+
+### 2. SBOM (Software Bill of Materials) com Syft
+
+```bash
+# Gerar SBOM em formato CycloneDX
+syft packages wallet-api-go:latest -o cyclonedx-json > sbom.json
+
+# Gerar SBOM em formato SPDX
+syft packages wallet-api-go:latest -o spdx-json > sbom-spdx.json
+
+# Analisar SBOM com Grype (vulnerabilidades)
+grype sbom:sbom.json
+```
+
+### 3. Image Signing com Cosign (Sigstore)
+
+```bash
+# Gerar par de chaves
+cosign generate-key-pair
+
+# Assinar imagem (após push para registry)
+cosign sign --key cosign.key ghcr.io/org/wallet-api-go:v1.0.0
+
+# Verificar assinatura (no deploy / admission controller)
+cosign verify --key cosign.pub ghcr.io/org/wallet-api-go:v1.0.0
+```
+
+### 4. CI Pipeline com Supply Chain Security
+
+```yaml
+# .github/workflows/supply-chain.yml
+jobs:
+  security:
+    steps:
+      - name: Build image
+        run: docker build -t wallet-api-go:${{ github.sha }} .
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: wallet-api-go:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          exit-code: 1  # Falha o build se encontrar vulnerabilidades
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: wallet-api-go:${{ github.sha }}
+          artifact-name: sbom.cyclonedx.json
+
+      - name: Sign image with Cosign
+        uses: sigstore/cosign-installer@v3
+        run: cosign sign --yes ghcr.io/org/wallet-api-go:${{ github.sha }}
+
+      - name: CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+```
+
+> **Critérios de aceite (Supply Chain):**
+> - [ ] `trivy image` executa sem vulnerabilidades HIGH/CRITICAL na imagem final
+> - [ ] SBOM gerado (CycloneDX ou SPDX) e armazenado como artefato do CI
+> - [ ] Imagem assinada com Cosign e assinatura verificável
+> - [ ] CodeQL ou SAST configurado no CI (0 findings críticos)
+> - [ ] `.trivyignore` documenta CVEs aceitas com justificativa
 
 ---
 

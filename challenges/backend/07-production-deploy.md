@@ -550,13 +550,451 @@ volumes:
 
 ## Extensões Opcionais
 
-- [ ] Implementar Helm chart para Kubernetes
 - [ ] Adicionar Terraform para provisionar infraestrutura cloud
-- [ ] Implementar blue-green deploy com Nginx ou Istio
-- [ ] Adicionar ArgoCD para GitOps
 - [ ] Configurar auto-scaling (HPA) baseado em CPU/custom metrics
 - [ ] Implementar multi-arch build (amd64 + arm64)
-- [ ] Adicionar Trivy scan para vulnerabilidades na imagem Docker
+
+---
+
+## Extensão: API Gateway com Kong
+
+Coloque um API Gateway na frente dos seus serviços para centralizar cross-cutting concerns.
+
+### Por que API Gateway?
+
+```
+                    ┌───────────────────────────────────────────────┐
+                    │               Kong API Gateway                 │
+                    │                                               │
+Client ──────────→ │  Rate Limiting → Auth (OIDC) → Routing → Log  │
+                    │                                               │
+                    └────────┬──────────────┬────────────────┬──────┘
+                             │              │                │
+                        wallet-api     exchange-api     notification-api
+```
+
+| Concern | Sem Gateway | Com Kong |
+|---|---|---|
+| Rate limiting | Implementado em cada serviço | Centralizado no Kong |
+| Autenticação | Cada serviço valida JWT | Kong valida via OIDC plugin |
+| Routing | Clients acessam N endpoints | Ponto único de entrada |
+| Logging/Metrics | Distribuído | Centralizado + per-route metrics |
+| CORS | Config duplicada | Config única no Gateway |
+
+### Setup Kong
+
+```yaml
+# docker-compose.yml
+services:
+  kong:
+    image: kong/kong-gateway:3.7
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_LOG_LEVEL: info
+    ports:
+      - "8000:8000"   # Proxy
+      - "8001:8001"   # Admin API
+    volumes:
+      - ./infra/kong/kong.yml:/kong/kong.yml
+```
+
+### Configuração Declarativa (DB-less)
+
+```yaml
+# infra/kong/kong.yml
+_format_version: "3.0"
+
+services:
+  - name: wallet-api
+    url: http://api:8080
+    routes:
+      - name: wallet-routes
+        paths:
+          - /api/v1
+        strip_path: false
+
+plugins:
+  - name: rate-limiting
+    config:
+      minute: 100
+      policy: local
+  - name: cors
+    config:
+      origins: ["http://localhost:3000"]
+      methods: ["GET", "POST", "PUT", "DELETE"]
+      headers: ["Authorization", "Content-Type"]
+  - name: prometheus
+    config:
+      per_consumer: true
+  - name: opentelemetry
+    config:
+      endpoint: "http://jaeger:4318/v1/traces"
+```
+
+### Integração com Keycloak (OIDC Plugin)
+
+```yaml
+# Adicionar ao kong.yml — requer Kong Enterprise ou community OIDC plugin
+plugins:
+  - name: openid-connect
+    config:
+      issuer: "http://keycloak:8080/realms/novapay"
+      client_id: "kong-gateway"
+      client_secret: "${KONG_OIDC_SECRET}"
+      bearer_only: "yes"
+      ssl_verify: false
+```
+
+> **Critérios de aceite (Kong):**
+> - [ ] Kong rodando no Docker Compose como ponto de entrada da API
+> - [ ] Routing funciona: `http://localhost:8000/api/v1/*` → API backend
+> - [ ] Rate limiting ativo (retorna 429 após exceder limite)
+> - [ ] Métricas do Kong expostas no Prometheus
+> - [ ] CORS configurado centralmente no Gateway
+
+---
+
+## Extensão: Helm Charts para Kubernetes
+
+Substitua os manifests K8s crus por Helm charts parametrizáveis e reutilizáveis.
+
+### Estrutura do Helm Chart
+
+```
+helm/
+└── digital-wallet/
+    ├── Chart.yaml
+    ├── values.yaml
+    ├── values-staging.yaml
+    ├── values-production.yaml
+    └── templates/
+        ├── deployment.yaml
+        ├── service.yaml
+        ├── configmap.yaml
+        ├── secret.yaml
+        ├── hpa.yaml
+        ├── ingress.yaml
+        ├── serviceaccount.yaml
+        └── _helpers.tpl
+```
+
+### values.yaml
+
+```yaml
+# helm/digital-wallet/values.yaml
+replicaCount: 2
+
+image:
+  repository: ghcr.io/org/wallet-api
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+env:
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  LOG_LEVEL: info
+  LOG_FORMAT: json
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+
+probes:
+  liveness:
+    path: /health/live
+    initialDelaySeconds: 10
+  readiness:
+    path: /health/ready
+    initialDelaySeconds: 15
+```
+
+### values-production.yaml (overrides)
+
+```yaml
+# helm/digital-wallet/values-production.yaml
+replicaCount: 3
+
+image:
+  tag: "v1.2.0"
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 20
+```
+
+### Comandos Helm
+
+```bash
+# Install/upgrade
+helm upgrade --install wallet ./helm/digital-wallet \
+  -f helm/digital-wallet/values-production.yaml \
+  -n digital-wallet --create-namespace
+
+# Dry-run (ver manifests gerados)
+helm template wallet ./helm/digital-wallet -f helm/digital-wallet/values-production.yaml
+
+# Rollback
+helm rollback wallet 1 -n digital-wallet
+
+# History
+helm history wallet -n digital-wallet
+```
+
+> **Critérios de aceite (Helm):**
+> - [ ] Helm chart funcional com `helm install` / `helm upgrade`
+> - [ ] `values.yaml` parametriza: image, replicas, resources, env, probes
+> - [ ] `values-staging.yaml` e `values-production.yaml` como overrides de ambiente
+> - [ ] `helm template` gera manifests válidos (dry-run OK)
+> - [ ] Rollback funciona: `helm rollback` restaura versão anterior
+
+---
+
+## Extensão: GitOps com Argo CD
+
+Implemente GitOps — o estado desejado da infraestrutura vive no Git e Argo CD reconcilia automaticamente.
+
+### Arquitetura GitOps
+
+```
+┌─────────────┐    push     ┌──────────────┐   sync    ┌────────────┐
+│  Developer   │ ─────────→ │  Git Repo     │ ←──────→ │  Argo CD    │
+│  (PR/merge)  │            │  (helm/,      │          │  Controller │
+└─────────────┘            │   k8s/)       │          └──────┬─────┘
+                            └──────────────┘                 │
+                                                       reconcile
+                                                             │
+                                                    ┌────────▼────────┐
+                                                    │   Kubernetes     │
+                                                    │   Cluster        │
+                                                    └─────────────────┘
+```
+
+### Argo CD Application
+
+```yaml
+# argocd/applications/wallet-api.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wallet-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/org/digital-wallet
+    targetRevision: main
+    path: helm/digital-wallet
+    helm:
+      valueFiles:
+        - values-production.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: digital-wallet
+  syncPolicy:
+    automated:
+      prune: true           # Remove recursos órfãos
+      selfHeal: true         # Corrige drift automaticamente
+    syncOptions:
+      - CreateNamespace=true
+```
+
+### ApplicationSet (Multi-Environment)
+
+```yaml
+# argocd/applicationsets/wallet-environments.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: wallet-environments
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - env: staging
+            cluster: https://kubernetes.default.svc
+            values: values-staging.yaml
+          - env: production
+            cluster: https://kubernetes.default.svc
+            values: values-production.yaml
+  template:
+    metadata:
+      name: "wallet-api-{{env}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/org/digital-wallet
+        targetRevision: main
+        path: helm/digital-wallet
+        helm:
+          valueFiles:
+            - "{{values}}"
+      destination:
+        server: "{{cluster}}"
+        namespace: "wallet-{{env}}"
+```
+
+### Fluxo de Promoção
+
+```
+feature branch → PR → merge main → Argo CD auto-sync staging
+                                      │
+                         ✅ testes + smoke test staging
+                                      │
+                    tag v1.2.0 → Argo CD sync production (manual approve)
+```
+
+> **Critérios de aceite (GitOps):**
+> - [ ] Argo CD instalado no cluster (Minikube/Kind)
+> - [ ] Application configurada para wallet-api com sync automático
+> - [ ] Push no Git → Argo CD detecta e reconcilia automaticamente
+> - [ ] Rollback via `git revert` → Argo CD reverte no cluster
+> - [ ] ApplicationSet para staging + production com values diferentes
+
+---
+
+## Extensão: Service Mesh (Istio / Linkerd)
+
+Introduza um service mesh para observabilidade, segurança e controle de tráfego entre microserviços sem alterar código.
+
+### O que o Service Mesh Adiciona?
+
+| Capacidade | Sem Mesh | Com Istio/Linkerd |
+|---|---|---|
+| **mTLS** | Configurar TLS em cada serviço | Automático (sidecar proxy) |
+| **Traffic shifting** | Manual (deploy strategies) | Canary/Blue-Green declarativo |
+| **Observabilidade** | Instrumentar cada serviço | Métricas automáticas (golden signals) |
+| **Retry/Timeout** | Código na aplicação | Config declarativa no mesh |
+| **Fault injection** | WireMock / tc / scripts | VirtualService com fault injection |
+| **Circuit breaking** | Resilience4j / gobreaker | DestinationRule no mesh |
+
+### Escolha: Istio vs Linkerd
+
+| Aspecto | Istio | Linkerd |
+|---|---|---|
+| **Complexidade** | Alta (muitos CRDs) | Baixa (mínimo config) |
+| **Performace (proxy)** | Envoy (C++) | linkerd2-proxy (Rust) |
+| **Features** | Muito completo | Essenciais, simples |
+| **Curva aprendizado** | Alta | Moderada |
+| **Recomendação** | Produção enterprise | Aprendizado + produção simples |
+
+### Exemplo: Canary Deploy com Istio
+
+```yaml
+# istio/virtual-service.yaml
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: wallet-api
+spec:
+  hosts:
+    - wallet-api
+  http:
+    - route:
+        - destination:
+            host: wallet-api
+            subset: stable
+          weight: 90
+        - destination:
+            host: wallet-api
+            subset: canary
+          weight: 10
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: wallet-api
+spec:
+  host: wallet-api
+  subsets:
+    - name: stable
+      labels:
+        version: v1
+    - name: canary
+      labels:
+        version: v2
+```
+
+### Exemplo: Fault Injection para Chaos Testing
+
+```yaml
+# istio/fault-injection.yaml
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: exchange-rate-fault
+spec:
+  hosts:
+    - exchange-rate-api
+  http:
+    - fault:
+        delay:
+          percentage:
+            value: 30
+          fixedDelay: 5s
+        abort:
+          percentage:
+            value: 10
+          httpStatus: 503
+      route:
+        - destination:
+            host: exchange-rate-api
+```
+
+> **Critérios de aceite (Service Mesh):**
+> - [ ] Istio ou Linkerd instalado no cluster (sidecar injection habilitado)
+> - [ ] mTLS automático entre serviços (verificável via `istioctl` ou `linkerd viz`)
+> - [ ] Canary deploy configurável via VirtualService (90/10 traffic split)
+> - [ ] Métricas do mesh visíveis no Grafana (request rate, error rate, latency entre serviços)
+> - [ ] Fault injection testado como alternativa ao WireMock para chaos engineering
+
+---
+
+## Extensão: Trivy — Vulnerability Scanning no CI
+
+```bash
+# Scan na imagem final
+trivy image --severity HIGH,CRITICAL digital-wallet:latest
+
+# Integração no CI
+- name: Trivy scan
+  uses: aquasecurity/trivy-action@master
+  with:
+    image-ref: digital-wallet:${{ github.sha }}
+    severity: HIGH,CRITICAL
+    exit-code: 1
+```
+
+> **Critérios de aceite (Trivy):**
+> - [ ] Zero vulnerabilidades HIGH/CRITICAL na imagem de produção
+> - [ ] Scan integrado no GitHub Actions (falha o build se encontrar vulnerabilidades)
 
 ---
 

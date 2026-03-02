@@ -96,6 +96,72 @@ internal/                 → package-private (convenção Java)
 | **Portabilidade** | Multi-plataforma | JVM anywhere | JVM + Native | JVM + Native | Qualquer app server certificado |
 | **Complexidade operacional** | Baixa (binário) | Média | Baixa-Média | Baixa-Média | Alta (app server) |
 
+### 2.5 Arquitetura do Sistema — Visão Geral
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          NovaPay Digital Wallet                                  │
+│                                                                                 │
+│  ┌─────────┐     ┌──────────────┐     ┌──────────────────────────────────────┐  │
+│  │ Client   │────→│ Kong API GW  │────→│          Wallet API                  │  │
+│  │ (REST/   │     │ (Rate Limit  │     │  ┌──────────────────────────────┐   │  │
+│  │  gRPC)   │     │  OIDC, CORS) │     │  │  Handler / Controller        │   │  │
+│  └─────────┘     └──────────────┘     │  ├──────────────────────────────┤   │  │
+│                         │              │  │  Service (Business Logic)     │   │  │
+│                  ┌──────▼──────┐       │  ├──────────────────────────────┤   │  │
+│                  │  Keycloak    │       │  │  Repository / Store          │   │  │
+│                  │  (OIDC IdP)  │       │  └──────────┬───────────────────┘   │  │
+│                  └─────────────┘       └─────────────┼───────────────────────┘  │
+│                                                       │                          │
+│  ┌────────────────────┐    ┌──────────────────────────┼──────────────────────┐  │
+│  │  Observability      │    │        Data Layer         │                      │  │
+│  │                     │    │  ┌──────────────┐  ┌──────▼──────┐              │  │
+│  │  Prometheus         │    │  │  Kafka/SQS   │  │ PostgreSQL  │              │  │
+│  │  Grafana            │    │  │  (Events)    │  │ (Write DB)  │              │  │
+│  │  Jaeger/Tempo       │    │  └──────┬───────┘  └──────┬──────┘              │  │
+│  │  Loki               │    │         │                  │                     │  │
+│  └────────────────────┘    │  ┌──────▼───────┐  ┌──────▼──────┐              │  │
+│                             │  │  Consumers   │  │  Debezium   │              │  │
+│  ┌────────────────────┐    │  │  (Notify,    │  │  (CDC)      │              │  │
+│  │  Chaos / SRE        │    │  │   Audit)     │  └──────┬──────┘              │  │
+│  │                     │    │  └──────────────┘         │                     │  │
+│  │  LitmusChaos        │    │                    ┌──────▼──────┐              │  │
+│  │  k6 Load Test       │    │                    │  Read Model  │              │  │
+│  │  Runbooks           │    │                    │  (CQRS)     │              │  │
+│  └────────────────────┘    │                    └─────────────┘              │  │
+│                             └────────────────────────────────────────────────┘  │
+│                                                                                 │
+│  ┌────────────────────────────────────────────────────────────────────────────┐ │
+│  │  Deployment: Docker → Helm → Argo CD (GitOps) → K8s + Service Mesh       │ │
+│  │  Security: JWT/OIDC → RBAC → Supply Chain (Trivy, Cosign, SBOM)          │ │
+│  └────────────────────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.6 Conceitos Transversais — Referência Rápida
+
+| Conceito | Level | Descrição |
+|---|---|---|
+| **RED Metrics** | 4 | Rate, Errors, Duration — monitoramento de serviços |
+| **USE Metrics** | 4 | Utilization, Saturation, Errors — monitoramento de recursos |
+| **VALET Metrics** | 4 | Volume, Availability, Latency, Errors, Tickets — métricas de negócio |
+| **Golden Signals** | 4 | Latency, Traffic, Errors, Saturation — Google SRE |
+| **SLIs / SLOs** | 4, 9 | Service Level Indicators & Objectives + Error Budget |
+| **API Gateway** | 7 | Kong — rate limiting, OIDC, routing centralizado |
+| **Service Mesh** | 7 | Istio/Linkerd — mTLS, canary deploy, fault injection |
+| **Helm Charts** | 7 | Pacotes K8s parametrizáveis para multi-environment |
+| **GitOps (Argo CD)** | 7 | Estado desejado no Git, reconciliação automática |
+| **Keycloak** | 5 | Identity Provider corporativo (OIDC, SSO, MFA) |
+| **Supply Chain Security** | 5 | Trivy, Cosign, SBOM — segurança da cadeia de software |
+| **gRPC** | 1 | Comunicação binária entre serviços (Protobuf/HTTP2) |
+| **CDC (Debezium)** | 6 | Change Data Capture via WAL/binlog do banco |
+| **CQRS** | 6 | Separação de modelos de leitura e escrita |
+| **Event Sourcing** | 6 | Estado como sequência de eventos imutáveis |
+| **SNS/SQS** | 6 | AWS messaging via LocalStack (fan-out pattern) |
+| **Schema Registry** | 6 | Versionamento e compatibilidade de schemas (Avro) |
+| **LitmusChaos** | 9 | Chaos engineering declarativo no Kubernetes |
+| **SRE Runbooks** | 9 | Procedimentos operacionais para incident response |
+
 ---
 
 ## 3. Desafio Unificado — Digital Wallet

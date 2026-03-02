@@ -67,6 +67,89 @@ POST /api/v1/wallets/{id}/convert      → Converter saldo para outra moeda (usa
 - Campos obrigatórios: `timestamp`, `level`, `msg`, `traceId`, `spanId`, `requestId`
 - Correlation: trace ID presente em log E no response header
 
+### Frameworks de Métricas — RED / USE / VALET / Golden Signals
+
+Organize suas métricas em frameworks consagrados para entender a saúde do sistema de forma estruturada:
+
+**RED Method** (focado em serviços/microserviços — Tom Wilkie):
+
+| Dimensão | Métrica Digital Wallet | PromQL Exemplo |
+|---|---|---|
+| **R**ate | Requests por segundo | `sum(rate(http_requests_total[5m]))` |
+| **E**rrors | Taxa de erro (%) | `sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100` |
+| **D**uration | Latência p50/p95/p99 | `histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))` |
+
+**USE Method** (focado em recursos de infraestrutura — Brendan Gregg):
+
+| Dimensão | Recurso | Métrica |
+|---|---|---|
+| **U**tilization | CPU | `rate(process_cpu_seconds_total[5m]) * 100` |
+| **S**aturation | DB Connection Pool | `hikaricp_connections_pending` / `db_pool_pending_connections` |
+| **E**rrors | Disco, rede, memória | `node_filesystem_errors_total`, OOM events |
+
+**VALET Method** (visão de negócio):
+
+| Dimensão | Aplicação no Wallet |
+|---|---|
+| **V**olume | Transações/min, Volume financeiro (R$) |
+| **A**vailability | Uptime %, readiness check success rate |
+| **L**atency | p50/p95/p99 por endpoint e por tipo de transação |
+| **E**rrors | Error rate por tipo (4xx, 5xx), falhas de negócio (saldo insuficiente) |
+| **T**ickets | Incidentes abertos, alertas disparados |
+
+**Golden Signals** (Google SRE Book):
+
+| Sinal | Métrica wallet | Alerta |
+|---|---|---|
+| **Latency** | `http_request_duration_seconds` | p99 > 500ms por 5min |
+| **Traffic** | `http_requests_total` rate | Queda > 50% em 5min |
+| **Errors** | `http_requests_total{status=~"5.."}` | Error rate > 0.1% |
+| **Saturation** | CPU, memory, DB pool, Kafka lag | Pool > 80%, lag > 1000 |
+
+> **Diretriz:** Use RED para monitorar seus **serviços**, USE para os **recursos** (CPU, DB, Kafka), VALET para reportar **métricas de negócio** para stakeholders, e Golden Signals para compor **SLIs/SLOs**.
+
+---
+
+### SLIs / SLOs — Service Level Indicators & Objectives
+
+Defina SLIs e SLOs para o Digital Wallet como prática de SRE:
+
+| SLI (Indicador) | Métrica | SLO (Objetivo) |
+|---|---|---|
+| **Disponibilidade** | `1 - (requests 5xx / total requests)` | ≥ 99.9% (30d rolling) |
+| **Latência de leitura** | p95 de `GET /wallets`, `GET /transactions` | < 200ms |
+| **Latência de escrita** | p95 de `POST /transactions/*` | < 500ms |
+| **Durabilidade de tx** | Transações persistidas / transações aceitas | 100% (zero loss) |
+| **Freshness** | Lag máximo do consumer Kafka | < 30 segundos |
+
+**Error Budget:**
+```
+Error Budget (30d) = 1 − SLO = 0.1% = ~43 min de indisponibilidade/mês
+
+Se error budget esgotado → congelar deploys, focar em confiabilidade
+Se error budget saudável → pode assumir mais risco (features, refactoring)
+```
+
+**Burn Rate Alert (Multi-Window):**
+```yaml
+# Alerta se queimando error budget 14.4x mais rápido que o normal (1h window)
+- alert: SLOBurnRateHigh
+  expr: |
+    (
+      sum(rate(http_requests_total{status=~"5.."}[1h]))
+      / sum(rate(http_requests_total[1h]))
+    ) > (14.4 * 0.001)
+  for: 5m
+  labels:
+    severity: critical
+  annotations:
+    summary: "Queimando error budget 14.4x acima do esperado"
+```
+
+> **Referência:** Google SRE Book — Cap. 4 (Service Level Objectives), Cap. 5 (Eliminating Toil)
+
+---
+
 ### Ferramentas por Stack
 
 | Aspecto | Go (Gin) | Spring Boot | Quarkus | Micronaut | Jakarta EE |
@@ -74,6 +157,7 @@ POST /api/v1/wallets/{id}/convert      → Converter saldo para outra moeda (usa
 | **Métricas** | prometheus/client_golang | Micrometer + Actuator | Micrometer (SmallRye) | Micrometer (built-in) | MicroProfile Metrics |
 | **Tracing** | go.opentelemetry.io/otel | Micrometer Tracing + OTel | OpenTelemetry (SmallRye) | Micronaut Tracing + OTel | MicroProfile Telemetry |
 | **Logging** | uber-go/zap | Logback + Logstash encoder | JBoss Logging / SLF4J | Logback | JBoss Logging |
+| **Log Aggregation** | Loki + Promtail | Loki + Logback appender | Loki + Quarkus logging | Loki + Logback appender | Loki + JBoss Log handler |
 | **Health** | custom `/health/*` | Spring Actuator | SmallRye Health | Micronaut Management | MicroProfile Health |
 | **Circuit Breaker** | sony/gobreaker | Resilience4j | SmallRye Fault Tolerance | Micronaut Retry + CB | MicroProfile Fault Tolerance |
 | **Retry** | cenkalti/backoff | Resilience4j `@Retry` | `@Retry` | `@Retryable` | `@Retry` |
@@ -321,8 +405,11 @@ scrape_configs:
 - [ ] Adicionar alertas no Grafana (ex: error rate > 5%)
 - [ ] Implementar custom span attributes (userId, walletId)
 - [ ] Adicionar baggage propagation para correlation IDs
-- [ ] Integrar com Loki para agregação de logs
-- [ ] Implementar SLI/SLO dashboard (ex: 99.9% requests < 200ms)
+- [ ] Integrar com **Loki + Promtail/Alloy** para agregação de logs centralizada (LogQL queries)
+- [ ] Implementar **SLI/SLO dashboard** completo com error budget tracking e burn rate alerts (multi-window)
+- [ ] Configurar **Grafana Alerting** com notificações (Slack, email) para SLO violations
+- [ ] Implementar **exemplars** no Prometheus para vincular métricas a traces específicos
+- [ ] Adicionar **Grafana Tempo** como backend alternativo ao Jaeger para tracing
 
 ---
 

@@ -445,13 +445,302 @@ volumes:
 
 ## Extensões Opcionais
 
-- [ ] Implementar CQRS (Command Query Responsibility Segregation)
-- [ ] Adicionar schema registry (Avro/Protobuf ao invés de JSON)
 - [ ] Implementar saga pattern para transferências distribuídas
-- [ ] Adicionar change data capture (CDC) via Debezium
-- [ ] Event sourcing — reconstruir saldo da wallet a partir de eventos
-- [ ] Implementar consumer lag monitoring via Prometheus
 - [ ] Adicionar Kafka Streams para agregação em tempo real
+- [ ] Implementar consumer lag monitoring via Prometheus
+
+---
+
+## Extensão: AWS SNS/SQS (via LocalStack)
+
+Além do Kafka (broker de eventos interno), implemente integração com **AWS SNS + SQS** para cenários de notificação e fan-out — típicos de arquiteturas cloud-native na AWS.
+
+### Padrão Fan-Out: SNS → SQS
+
+```
+                         ┌──── SQS: notification-queue ──→ Notification Consumer
+                         │
+Transaction Event ──→ SNS Topic ──── SQS: audit-queue ──→ Audit Consumer
+                         │
+                         └──── SQS: analytics-queue ──→ Analytics Consumer
+```
+
+### Setup com LocalStack
+
+```yaml
+# docker-compose.yml
+services:
+  localstack:
+    image: localstack/localstack:3.5
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: sns,sqs,lambda
+      DEFAULT_REGION: us-east-1
+    volumes:
+      - ./infra/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh
+```
+
+```bash
+# infra/localstack/init-aws.sh
+#!/bin/bash
+awslocal sns create-topic --name wallet-transactions
+awslocal sqs create-queue --queue-name notification-queue
+awslocal sqs create-queue --queue-name audit-queue
+awslocal sqs create-queue --queue-name analytics-queue
+
+# Subscribe queues to SNS topic (fan-out)
+TOPIC_ARN=$(awslocal sns list-topics --query 'Topics[0].TopicArn' --output text)
+awslocal sns subscribe --topic-arn $TOPIC_ARN --protocol sqs --notification-endpoint arn:aws:sqs:us-east-1:000000000000:notification-queue
+awslocal sns subscribe --topic-arn $TOPIC_ARN --protocol sqs --notification-endpoint arn:aws:sqs:us-east-1:000000000000:audit-queue
+awslocal sns subscribe --topic-arn $TOPIC_ARN --protocol sqs --notification-endpoint arn:aws:sqs:us-east-1:000000000000:analytics-queue
+```
+
+### Implementação por Stack
+
+| Stack | SNS/SQS Client |
+|---|---|
+| **Go** | `aws-sdk-go-v2/service/sns` + `aws-sdk-go-v2/service/sqs` |
+| **Spring Boot** | `spring-cloud-aws-messaging` ou AWS SDK v2 + `@SqsListener` |
+| **Quarkus** | `quarkus-amazon-sns` + `quarkus-amazon-sqs` |
+| **Micronaut** | `micronaut-aws-sdk-v2` |
+| **Jakarta EE** | AWS SDK v2 direto |
+
+> **Critérios de aceite (SNS/SQS):**
+> - [ ] LocalStack rodando com SNS topic e 3 SQS queues
+> - [ ] Fan-out: 1 publish no SNS → mensagem em 3 filas
+> - [ ] Consumer consome de SQS com idempotência
+> - [ ] DLQ configurada para mensagens com falha de processamento
+> - [ ] Testes de integração usando LocalStack (Testcontainers ou direto)
+
+---
+
+## Extensão: Schema Evolution & Schema Registry
+
+Evolua seus schemas de eventos de forma segura com versionamento e compatibilidade.
+
+### Schema Registry com Confluent
+
+```yaml
+# docker-compose.yml
+services:
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.0
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+```
+
+### Estratégias de Compatibilidade
+
+| Estratégia | Quando usar | Exemplo |
+|---|---|---|
+| **BACKWARD** (default) | Consumer novo lê dados antigos | Adicionar campo optional |
+| **FORWARD** | Producer novo, consumer antigo | Remover campo optional |
+| **FULL** | Ambos | Adicionar campo optional + default value |
+| **NONE** | Desenvolvimento/testes | Breaking changes permitidos |
+
+### Formato de Eventos (Avro)
+
+```json
+{
+  "type": "record",
+  "name": "TransactionEvent",
+  "namespace": "com.novapay.wallet.events",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": {"type": "enum", "name": "EventType", "symbols": ["DEPOSIT", "WITHDRAWAL", "TRANSFER"]}},
+    {"name": "walletId", "type": "string"},
+    {"name": "amount", "type": {"type": "bytes", "logicalType": "decimal", "precision": 18, "scale": 2}},
+    {"name": "currency", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "metadata", "type": ["null", {"type": "map", "values": "string"}], "default": null}
+  ]
+}
+```
+
+> **Critérios de aceite (Schema Registry):**
+> - [ ] Schema Registry rodando no Docker Compose
+> - [ ] Eventos serializados em Avro (ou JSON Schema) com registro no Schema Registry
+> - [ ] Compatibilidade BACKWARD configurada — adicionar um campo novo sem quebrar consumers existentes
+> - [ ] Testes de compatibilidade de schema no CI
+
+---
+
+## Extensão: CDC — Change Data Capture com Debezium
+
+Capture mudanças no banco de dados em tempo real e propague como eventos, sem alterar o código da aplicação.
+
+### Arquitetura CDC
+
+```
+┌─────────────┐     WAL/Binlog     ┌──────────┐     Kafka     ┌──────────────┐
+│  PostgreSQL  │ ─────────────────→ │ Debezium  │ ───────────→ │ Kafka Topics  │
+│  (wallets,   │                    │ Connector │              │ dbserver.     │
+│  transactions)│                   └──────────┘              │ wallet.tb_*   │
+└─────────────┘                                               └──────────────┘
+                                                                     │
+                                                               ┌─────┴─────┐
+                                                               │  Consumer  │
+                                                               │  (CQRS     │
+                                                               │   read     │
+                                                               │   model)   │
+                                                               └───────────┘
+```
+
+### Setup Debezium
+
+```yaml
+# docker-compose.yml
+services:
+  debezium:
+    image: debezium/connect:2.6
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: debezium-wallet
+      CONFIG_STORAGE_TOPIC: debezium_configs
+      OFFSET_STORAGE_TOPIC: debezium_offsets
+      STATUS_STORAGE_TOPIC: debezium_statuses
+```
+
+```bash
+# Registrar connector para capturar mudanças nas tabelas do wallet
+curl -X POST http://localhost:8083/connectors -H "Content-Type: application/json" -d '{
+  "name": "wallet-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "wallet_user",
+    "database.password": "wallet_pass",
+    "database.dbname": "digital_wallet",
+    "topic.prefix": "dbserver",
+    "table.include.list": "public.wallets,public.transactions",
+    "plugin.name": "pgoutput",
+    "slot.name": "wallet_slot",
+    "publication.name": "wallet_publication"
+  }
+}'
+```
+
+> **Critérios de aceite (CDC):**
+> - [ ] Debezium rodando e conectado ao PostgreSQL
+> - [ ] Mudanças em `wallets` e `transactions` publicadas automaticamente no Kafka
+> - [ ] Consumer processa eventos CDC para mantener read model atualizado
+> - [ ] Tombstone events (deletes) tratados corretamente
+
+---
+
+## Extensão: CQRS — Command Query Responsibility Segregation
+
+Separe o modelo de escrita (commands) do modelo de leitura (queries) para otimizar cada um independentemente.
+
+### Arquitetura CQRS
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        CQRS Architecture                          │
+│                                                                    │
+│  ┌─── Commands ───┐              ┌─── Queries ───┐               │
+│  │ POST deposit    │              │ GET statement  │               │
+│  │ POST transfer   │              │ GET balance    │               │
+│  │ POST withdrawal │              │ GET analytics  │               │
+│  └───────┬─────────┘              └───────┬────────┘              │
+│          │                                │                        │
+│  ┌───────▼─────────┐              ┌───────▼────────┐              │
+│  │  Write Model     │   ──CDC──→  │  Read Model     │              │
+│  │  (PostgreSQL)    │   ou Event  │  (PostgreSQL/   │              │
+│  │  Normalizado     │   Sourcing  │   Elasticsearch/│              │
+│  │                  │             │   Redis)        │              │
+│  └──────────────────┘             └─────────────────┘              │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Implementação Simplificada
+
+```sql
+-- Read model: view materializada para consultas rápidas de extrato
+CREATE MATERIALIZED VIEW wallet_statement_view AS
+SELECT
+  t.id, t.wallet_id, t.type, t.amount, t.currency,
+  t.status, t.description, t.created_at,
+  w.balance AS wallet_balance_after,
+  u.name AS user_name
+FROM transactions t
+JOIN wallets w ON t.wallet_id = w.id
+JOIN users u ON w.user_id = u.id
+ORDER BY t.created_at DESC;
+
+-- Refresh via CDC event ou scheduler
+REFRESH MATERIALIZED VIEW CONCURRENTLY wallet_statement_view;
+```
+
+> **Critérios de aceite (CQRS):**
+> - [ ] Commands (escrita) e Queries (leitura) separados em services/handlers distintos
+> - [ ] Read model atualizado via CDC (Debezium) ou projeção de eventos
+> - [ ] Queries de extrato consultam read model (mais rápido que joins em write model)
+> - [ ] Eventual consistency documentada — read model pode ter lag de N ms
+
+---
+
+## Extensão: Event Sourcing
+
+Armazene o estado como sequência de eventos imutáveis ao invés de estado mutável.
+
+### Event Store
+
+```sql
+CREATE TABLE event_store (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  aggregate_type   VARCHAR(50) NOT NULL,      -- 'Wallet'
+  aggregate_id     UUID NOT NULL,             -- wallet_id
+  event_type       VARCHAR(100) NOT NULL,     -- 'BalanceCredited'
+  event_data       JSONB NOT NULL,            -- payload do evento
+  metadata         JSONB,                     -- traceId, userId, etc.
+  version          BIGINT NOT NULL,           -- para optimistic locking
+  created_at       TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(aggregate_id, version)               -- garante ordem
+);
+```
+
+### Reconstrução de Estado (Replay)
+
+```
+Wallet abc-123 — replay:
+  Event 1: WalletCreated      { currency: BRL }                     → balance: 0
+  Event 2: BalanceCredited     { amount: 1000, type: DEPOSIT }      → balance: 1000
+  Event 3: BalanceDebited      { amount: 250, type: TRANSFER }      → balance: 750
+  Event 4: BalanceDebited      { amount: 100, type: WITHDRAWAL }    → balance: 650
+  Event 5: WalletBlocked       { reason: "FRAUD_SUSPICION" }        → status: BLOCKED
+
+  Estado atual: { balance: 650, currency: BRL, status: BLOCKED }
+```
+
+### Snapshot para Performance
+
+```sql
+CREATE TABLE wallet_snapshots (
+  wallet_id    UUID PRIMARY KEY,
+  balance      DECIMAL(18,2) NOT NULL,
+  currency     VARCHAR(3) NOT NULL,
+  status       VARCHAR(20) NOT NULL,
+  version      BIGINT NOT NULL,           -- último evento aplicado
+  snapshot_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- Reconstrução: carregar snapshot + replay eventos com version > snapshot.version
+```
+
+> **Critérios de aceite (Event Sourcing):**
+> - [ ] Event store com tabela de eventos imutáveis
+> - [ ] Saldo da wallet reconstruído a partir de replay de eventos
+> - [ ] Optimistic locking via campo `version` (409 Conflict em concorrência)
+> - [ ] Snapshot implementado para performance (não replay 100% dos eventos)
+> - [ ] Audit trail completo — todos os eventos preservados
 
 ---
 
