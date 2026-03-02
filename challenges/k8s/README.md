@@ -206,6 +206,7 @@ Level 16 — Kubestronaut
 | [Level 14](14-cks.md) | CKS Prep | Semana 33-36 |
 | [Level 15](15-kcsa.md) | KCSA Prep | Semana 37-38 |
 | [Level 16](16-kubestronaut.md) | Capstone Kubestronaut | Semana 39-40 |
+| [Level 17](17-capstone-cloudshop-production.md) | Capstone: CloudShop Production | Semana 41-44 |
 
 ---
 

@@ -332,7 +332,8 @@ challenges/
 │   ├── 05-security-authz.md
 │   ├── 06-async-messaging.md
 │   ├── 07-production-deploy.md
-│   └── 08-benchmark-comparative.md
+│   ├── 08-benchmark-comparative.md
+│   └── 09-capstone-digital-wallet.md
 │
 ├── quality/                           ← Fase 4: Quality Engineering
 │   ├── README.md
@@ -454,7 +455,8 @@ challenges/
     ├── 13-cka.md
     ├── 14-cks.md
     ├── 15-kcsa.md
-    └── 16-kubestronaut.md
+    ├── 16-kubestronaut.md
+    └── 17-capstone-cloudshop-production.md
 │
 ├── tech-leadership/                   ← Transversal: Tech Leadership & People Excellence
 │   ├── README.md

@@ -247,6 +247,7 @@ GET    /api/v1/health/ready                    → Readiness
 | [Level 6](06-async-messaging.md) | Assíncrono + Mensageria | Semana 13-14 |
 | [Level 7](07-production-deploy.md) | Produção + Deploy | Semana 15-16 |
 | [Level 8](08-benchmark-comparative.md) | Benchmark + Comparativo | Semana 17-18 |
+| [Level 9](09-capstone-digital-wallet.md) | Capstone: Production Launch | Semana 19-22 |
 
 ---
 
@@ -362,6 +363,7 @@ Ao completar cada nível em cada framework, documente:
 | 13-14 | Level 6: Mensageria | Go, Spring | Kafka producer/consumer |
 | 15-16 | Level 7: Docker + Deploy | Todos os 5 | Docker Compose completo |
 | 17-18 | Level 8: Benchmark | Todos os 5 | Relatório comparativo k6 |
+| 19-22 | Level 9: Capstone | Todos os 5 | Production launch + report |
 
 **Estratégia:** Completar cada nível primeiro em Go + Spring Boot, depois replicar em Quarkus → Micronaut → Jakarta EE. A replicação fica cada vez mais rápida conforme os conceitos são internalizados.
 
